@@ -20,8 +20,16 @@ import cv2
 import numpy as np
 import sys
 import time
+import threading
 from threading import Thread
 import importlib.util
+import send_message
+import datetime
+
+
+from flask import Response
+from flask import Flask
+from flask import render_template
 
 # Define VideoStream class to handle streaming of video from webcam in separate processing thread
 # Source - Adrian Rosebrock, PyImageSearch: https://www.pyimagesearch.com/2015/12/28/increasing-raspberry-pi-fps-with-python-and-opencv/
@@ -81,6 +89,10 @@ parser.add_argument('--resolution', help='Desired webcam resolution in WxH. If t
                     default='1280x720')
 parser.add_argument('--edgetpu', help='Use Coral Edge TPU Accelerator to speed up detection',
                     action='store_true')
+parser.add_argument("-i", "--ip", type=str, required=True,
+    help="ip address of the device")
+parser.add_argument("-o", "--port", type=int, required=True,
+    help="ephemeral port number of the server (1024 to 65535)")
 
 args = parser.parse_args()
 
@@ -92,6 +104,8 @@ min_conf_threshold = float(args.threshold)
 resW, resH = args.resolution.split('x')
 imW, imH = int(resW), int(resH)
 use_TPU = args.edgetpu
+
+feed_url = "http://" + str(args.ip) + ":" + str(args.port)
 
 # Import TensorFlow libraries
 # If tflite_runtime is installed, import interpreter from tflite_runtime, else import from regular tensorflow
@@ -166,73 +180,155 @@ else: # This is a TF1 model
 frame_rate_calc = 1
 freq = cv2.getTickFrequency()
 
+# initialize the output frame and a lock used to ensure thread-safe
+# exchanges of the output frames (useful when multiple browsers/tabs
+# are viewing the stream)
+outputFrame = None
+lock = threading.Lock()
+
+# initialize a flask object
+app = Flask(__name__)        
+
 # Initialize video stream
 videostream = VideoStream(resolution=(imW,imH),framerate=30).start()
 time.sleep(1)
 
-#for frame1 in camera.capture_continuous(rawCapture, format="bgr",use_video_port=True):
-while True:
+# IP camera RTSP URLs
+CAMERAS = {
+    "rtsp://admin:23578LockDown!40@192.168.100.12:554/cam/realmonitor?channel=1&subtype=1": "DRIVEWAY",
+    "rtsp://admin:23578LockDown!40@192.168.100.12:554/cam/realmonitor?channel=2&subtype=0": "FRONT_PORCH",
+    "rtsp://admin:23578LockDown!40@192.168.100.12:554/cam/realmonitor?channel=3&subtype=0": "SW_YARD",
+    "rtsp://admin:23578LockDown!40@192.168.100.12:554/cam/realmonitor?channel=4&subtype=0": "W_PORCH",
+    "rtsp://admin:23578LockDown!40@192.168.100.12:554/cam/realmonitor?channel=5&subtype=0": "N_YARD",
+    "rtsp://admin:23578LockDown!40@192.168.100.12:554/cam/realmonitor?channel=6&subtype=0": "NE_YARD"
+}
 
-    # Start timer (for calculating frame rate)
-    t1 = cv2.getTickCount()
+# Used for cooloff time between sending consecutive notification messages
+message_time = datetime.datetime(1900, 1, 1)
 
-    # Grab frame from video stream
-    frame1 = videostream.read()
+@app.route("/")
+def index():
+	# return the rendered template
+    # global CWD_PATH
+    # index_path = os.path.join(CWD_PATH, "index.html")
+    return render_template("index.html")
 
-    # Acquire frame and resize to expected shape [1xHxWx3]
-    frame = frame1.copy()
-    frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-    frame_resized = cv2.resize(frame_rgb, (width, height))
-    input_data = np.expand_dims(frame_resized, axis=0)
+def generate():
+	# grab global references to the output frame and lock variables
+	global outputFrame, lock
+	# loop over frames from the output stream
+	while True:
+		# wait until the lock is acquired
+		with lock:
+			# check if the output frame is available, otherwise skip
+			# the iteration of the loop
+			if outputFrame is None:
+				continue
+			# encode the frame in JPEG format
+			(flag, encodedImage) = cv2.imencode(".jpg", outputFrame)
+			# ensure the frame was successfully encoded
+			if not flag:
+				continue
+		# yield the output frame in the byte format
+		yield(b'--frame\r\n' b'Content-Type: image/jpeg\r\n\r\n' + 
+			bytearray(encodedImage) + b'\r\n')
 
-    # Normalize pixel values if using a floating model (i.e. if model is non-quantized)
-    if floating_model:
-        input_data = (np.float32(input_data) - input_mean) / input_std
+@app.route("/video_feed")
+def video_feed():
+	# return the response generated along with the specific media
+	# type (mime type)
+	return Response(generate(),
+		mimetype = "multipart/x-mixed-replace; boundary=frame")    
 
-    # Perform the actual detection by running the model with the image as input
-    interpreter.set_tensor(input_details[0]['index'],input_data)
-    interpreter.invoke()
+# Main function for performing detection and notifying users of activity
+def detection():
+    global frame_rate_calc, outputFrame, message_time, CAMERAS, videostream, freq, feed_url
 
-    # Retrieve detection results
-    boxes = interpreter.get_tensor(output_details[boxes_idx]['index'])[0] # Bounding box coordinates of detected objects
-    classes = interpreter.get_tensor(output_details[classes_idx]['index'])[0] # Class index of detected objects
-    scores = interpreter.get_tensor(output_details[scores_idx]['index'])[0] # Confidence of detected objects
+    #for frame1 in camera.capture_continuous(rawCapture, format="bgr",use_video_port=True):
+    while True:
 
-    # Loop over all detections and draw detection box if confidence is above minimum threshold
-    for i in range(len(scores)):
-        if ((scores[i] > min_conf_threshold) and (scores[i] <= 1.0)):
+        # Start timer (for calculating frame rate)
+        t1 = cv2.getTickCount()
 
-            # Get bounding box coordinates and draw box
-            # Interpreter can return coordinates that are outside of image dimensions, need to force them to be within image using max() and min()
-            ymin = int(max(1,(boxes[i][0] * imH)))
-            xmin = int(max(1,(boxes[i][1] * imW)))
-            ymax = int(min(imH,(boxes[i][2] * imH)))
-            xmax = int(min(imW,(boxes[i][3] * imW)))
-            
-            cv2.rectangle(frame, (xmin,ymin), (xmax,ymax), (10, 255, 0), 2)
+        # Grab frame from video stream
+        frame1 = videostream.read()
 
-            # Draw label
-            object_name = labels[int(classes[i])] # Look up object name from "labels" array using class index
-            label = '%s: %d%%' % (object_name, int(scores[i]*100)) # Example: 'person: 72%'
-            labelSize, baseLine = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.7, 2) # Get font size
-            label_ymin = max(ymin, labelSize[1] + 10) # Make sure not to draw label too close to top of window
-            cv2.rectangle(frame, (xmin, label_ymin-labelSize[1]-10), (xmin+labelSize[0], label_ymin+baseLine-10), (255, 255, 255), cv2.FILLED) # Draw white box to put label text in
-            cv2.putText(frame, label, (xmin, label_ymin-7), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 0), 2) # Draw label text
+        # Acquire frame and resize to expected shape [1xHxWx3]
+        frame = frame1.copy()
+        frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        frame_resized = cv2.resize(frame_rgb, (width, height))
+        input_data = np.expand_dims(frame_resized, axis=0)
 
-    # Draw framerate in corner of frame
-    cv2.putText(frame,'FPS: {0:.2f}'.format(frame_rate_calc),(30,50),cv2.FONT_HERSHEY_SIMPLEX,1,(255,255,0),2,cv2.LINE_AA)
+        # Normalize pixel values if using a floating model (i.e. if model is non-quantized)
+        if floating_model:
+            input_data = (np.float32(input_data) - input_mean) / input_std
 
-    # All the results have been drawn on the frame, so it's time to display it.
-    cv2.imshow('Object detector', frame)
+        # Perform the actual detection by running the model with the image as input
+        interpreter.set_tensor(input_details[0]['index'],input_data)
+        interpreter.invoke()
 
-    # Calculate framerate
-    t2 = cv2.getTickCount()
-    time1 = (t2-t1)/freq
-    frame_rate_calc= 1/time1
+        # Retrieve detection results
+        boxes = interpreter.get_tensor(output_details[boxes_idx]['index'])[0] # Bounding box coordinates of detected objects
+        classes = interpreter.get_tensor(output_details[classes_idx]['index'])[0] # Class index of detected objects
+        scores = interpreter.get_tensor(output_details[scores_idx]['index'])[0] # Confidence of detected objects
 
-    # Press 'q' to quit
-    if cv2.waitKey(1) == ord('q'):
-        break
+        # Loop over all detections and draw detection box if confidence is above minimum threshold
+        for i in range(len(scores)):
+            if ((scores[i] > min_conf_threshold) and (scores[i] <= 1.0)):
+
+                # Get bounding box coordinates and draw box
+                # Interpreter can return coordinates that are outside of image dimensions, need to force them to be within image using max() and min()
+                ymin = int(max(1,(boxes[i][0] * imH)))
+                xmin = int(max(1,(boxes[i][1] * imW)))
+                ymax = int(min(imH,(boxes[i][2] * imH)))
+                xmax = int(min(imW,(boxes[i][3] * imW)))
+                
+                cv2.rectangle(frame, (xmin,ymin), (xmax,ymax), (10, 255, 0), 2)
+
+                # Draw label
+                object_name = labels[int(classes[i])] # Look up object name from "labels" array using class index
+                label = '%s: %d%%' % (object_name, int(scores[i]*100)) # Example: 'person: 72%'
+                labelSize, baseLine = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.7, 2) # Get font size
+                label_ymin = max(ymin, labelSize[1] + 10) # Make sure not to draw label too close to top of window
+                cv2.rectangle(frame, (xmin, label_ymin-labelSize[1]-10), (xmin+labelSize[0], label_ymin+baseLine-10), (255, 255, 255), cv2.FILLED) # Draw white box to put label text in
+                cv2.putText(frame, label, (xmin, label_ymin-7), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 0), 2) # Draw label text
+
+                # Handle notifications based on detection results
+                current_time = datetime.datetime.now()
+
+                if object_name == 'car' and current_time >= (message_time + datetime.timedelta(seconds = 30)):
+
+                    send_message.send_message("2064036916", "tmobile", CAMERAS[STREAM_URL], current_time, feed_url)
+                    send_message.send_message("2064229458", "tmobile", CAMERAS[STREAM_URL], current_time, feed_url)
+
+                    message_time = current_time
+
+        # Draw framerate in corner of frame
+        cv2.putText(frame,'FPS: {0:.2f}'.format(frame_rate_calc),(30,50),cv2.FONT_HERSHEY_SIMPLEX,1,(255,255,0),2,cv2.LINE_AA)
+
+        # All the results have been drawn on the frame, so it's time to display it.
+        # cv2.imshow('SeamNet', frame) # uncomment for local video display
+
+        with lock:
+            outputFrame = frame.copy()
+
+        # Calculate framerate
+        t2 = cv2.getTickCount()
+        time1 = (t2-t1)/freq
+        frame_rate_calc= 1/time1
+
+        # Press 'q' to quit
+        if cv2.waitKey(1) == ord('q'):
+            break
+
+# start a thread that will perform motion detection
+t = threading.Thread(target=detection)
+t.daemon = True
+t.start()
+
+# start the flask app
+app.run(host=args.ip, port=args.port, debug=True,
+    threaded=True, use_reloader=False)            
 
 # Clean up
 cv2.destroyAllWindows()

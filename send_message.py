@@ -13,7 +13,7 @@ CARRIERS = {
 }
  
 EMAIL = "seamutility@gmail.com"
-PASSWORD = "jbnpdnldvqdhqlqt"
+PASSWORD = ""
  
 def send_message(phone_number, carrier, camera, timestamp, feed_url):
     timestamp = timestamp.replace(microsecond=0) # Remove milliseconds for readabillity

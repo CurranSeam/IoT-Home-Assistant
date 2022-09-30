@@ -195,12 +195,6 @@ time.sleep(1)
 
 # IP camera RTSP URLs
 CAMERAS = {
-    "rtsp://admin:23578LockDown!40@192.168.100.12:554/cam/realmonitor?channel=1&subtype=1": "DRIVEWAY",
-    "rtsp://admin:23578LockDown!40@192.168.100.12:554/cam/realmonitor?channel=2&subtype=0": "FRONT_PORCH",
-    "rtsp://admin:23578LockDown!40@192.168.100.12:554/cam/realmonitor?channel=3&subtype=0": "SW_YARD",
-    "rtsp://admin:23578LockDown!40@192.168.100.12:554/cam/realmonitor?channel=4&subtype=0": "W_PORCH",
-    "rtsp://admin:23578LockDown!40@192.168.100.12:554/cam/realmonitor?channel=5&subtype=0": "N_YARD",
-    "rtsp://admin:23578LockDown!40@192.168.100.12:554/cam/realmonitor?channel=6&subtype=0": "NE_YARD"
 }
 
 # Used for cooloff time between sending consecutive notification messages

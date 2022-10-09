@@ -31,6 +31,8 @@ from flask import Response
 from flask import Flask
 from flask import render_template
 
+import psutil
+
 # Define VideoStream class to handle streaming of video from webcam in separate processing thread
 # Source - Adrian Rosebrock, PyImageSearch: https://www.pyimagesearch.com/2015/12/28/increasing-raspberry-pi-fps-with-python-and-opencv/
 class VideoStream:
@@ -96,6 +98,8 @@ parser.add_argument("-o", "--port", type=int, required=True,
 
 args = parser.parse_args()
 
+start_time = datetime.datetime.now()
+
 MODEL_NAME = args.modeldir
 STREAM_URL = args.streamurl
 GRAPH_NAME = args.graph
@@ -105,7 +109,7 @@ resW, resH = args.resolution.split('x')
 imW, imH = int(resW), int(resH)
 use_TPU = args.edgetpu
 
-feed_url = "http://" + str(args.ip) + ":" + str(args.port)
+feed_url = str(args.ip) + ":" + str(args.port)
 
 # Import TensorFlow libraries
 # If tflite_runtime is installed, import interpreter from tflite_runtime, else import from regular tensorflow
@@ -195,6 +199,12 @@ time.sleep(1)
 
 # IP camera RTSP URLs
 CAMERAS = {
+    "rtsp://admin:23578LockDown!40@192.168.100.12:554/cam/realmonitor?channel=1&subtype=1": "DRIVEWAY",
+    "rtsp://admin:23578LockDown!40@192.168.100.12:554/cam/realmonitor?channel=2&subtype=0": "FRONT_PORCH",
+    "rtsp://admin:23578LockDown!40@192.168.100.12:554/cam/realmonitor?channel=3&subtype=0": "SW_YARD",
+    "rtsp://admin:23578LockDown!40@192.168.100.12:554/cam/realmonitor?channel=4&subtype=0": "W_PORCH",
+    "rtsp://admin:23578LockDown!40@192.168.100.12:554/cam/realmonitor?channel=5&subtype=0": "N_YARD",
+    "rtsp://admin:23578LockDown!40@192.168.100.12:554/cam/realmonitor?channel=6&subtype=0": "NE_YARD"
 }
 
 # Used for cooloff time between sending consecutive notification messages
@@ -203,11 +213,9 @@ message_time = datetime.datetime(1900, 1, 1)
 @app.route("/")
 def index():
 	# return the rendered template
-    # global CWD_PATH
-    # index_path = os.path.join(CWD_PATH, "index.html")
     return render_template("index.html")
 
-def generate():
+def generate_frame():
 	# grab global references to the output frame and lock variables
 	global outputFrame, lock
 	# loop over frames from the output stream
@@ -231,12 +239,49 @@ def generate():
 def video_feed():
 	# return the response generated along with the specific media
 	# type (mime type)
-	return Response(generate(),
+	return Response(generate_frame(),
 		mimetype = "multipart/x-mixed-replace; boundary=frame")    
+
+@app.route("/stats")
+def stats():
+	# return the response generated along with the specific media
+	# type (mime type)
+    def generate():
+
+        while True:
+            memory = psutil.virtual_memory()
+            # Divide from Bytes -> KB -> MB
+            available = round(memory.available/1024.0/1024.0,1)
+            total = round(memory.total/1024.0/1024.0,1)
+
+            disk = psutil.disk_usage('/')
+            # Divide from Bytes -> KB -> MB -> GB
+            free = round(disk.free/1024.0/1024.0/1024.0,1)
+            total = round(disk.total/1024.0/1024.0/1024.0,1)
+
+            uptime = datetime.datetime.now() - start_time
+            # uptime = str(uptime.days) + " days " + str(uptime.seconds // 3600) + " hours " + str(uptime.seconds // 60) + " minutes "
+ 
+            stats = """\
+                Server uptime: %s\nCPU temperature: %s °C\nMemory: %s\nDisk: %s
+            """%(str(uptime), 
+                 str(psutil.cpu_percent()), 
+                 str(available) + 'MB free / ' + str(total) + 'MB total ( ' + str(memory.percent) + '% )', 
+                 str(free) + 'GB free / ' + str(total) + 'GB total ( ' + str(disk.percent) + '% )'
+                )
+            yield stats
+            time.sleep(0.5)
+
+    return Response(generate(), mimetype='text/plain')
+    # while True:
+    #     # with app.open_resource('./static/rpistats.txt') as f:
+    #     #     stats = f.read()
+    
+    #     return Response(str(psutil.cpu_percent()) + '%', mimetype='text/plain')
 
 # Main function for performing detection and notifying users of activity
 def detection():
-    global frame_rate_calc, outputFrame, message_time, CAMERAS, videostream, freq, feed_url
+    global frame_rate_calc, outputFrame, message_time, CAMERAS, videostream, freq, feed_url, CWD_PATH
 
     #for frame1 in camera.capture_continuous(rawCapture, format="bgr",use_video_port=True):
     while True:
@@ -290,10 +335,15 @@ def detection():
                 # Handle notifications based on detection results
                 current_time = datetime.datetime.now()
 
-                if object_name == 'car' and current_time >= (message_time + datetime.timedelta(seconds = 30)):
+                if object_name == 'person' and current_time >= (message_time + datetime.timedelta(minutes = 5)):
+                    
+                    # snapshot = frame.copy()
 
-                    send_message.send_message("2064036916", "tmobile", CAMERAS[STREAM_URL], current_time, feed_url)
-                    send_message.send_message("2064229458", "tmobile", CAMERAS[STREAM_URL], current_time, feed_url)
+                    filepath = CWD_PATH + "/snapshot.jpeg"
+
+                    cv2.imwrite(filepath, frame)
+
+                    send_message.send_message(CAMERAS[STREAM_URL], current_time, feed_url, filepath)
 
                     message_time = current_time
 
@@ -322,7 +372,7 @@ t.start()
 
 # start the flask app
 app.run(host=args.ip, port=args.port, debug=True,
-    threaded=True, use_reloader=False)            
+    threaded=True, use_reloader=False)          
 
 # Clean up
 cv2.destroyAllWindows()

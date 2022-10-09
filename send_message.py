@@ -1,9 +1,11 @@
+from email.mime.base import MIMEBase
 from email.mime.text import MIMEText
 from email.mime.image import MIMEImage
 from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
 import smtplib
 import sys
+import os
  
 CARRIERS = {
     "att": "@mms.att.net",
@@ -14,25 +16,33 @@ CARRIERS = {
  
 EMAIL = ""
 PASSWORD = ""
+
+RECIPIENTS = []
  
-def send_message(phone_number, carrier, camera, timestamp, feed_url):
+def send_message(camera, timestamp, feed_url, img_filename):
     timestamp = timestamp.replace(microsecond=0) # Remove milliseconds for readabillity
+
     text = """\
-    \n\nPerson detected in %s\n\nat %s\n\nLive feed:\n%s
+    ^^^ SeamNet Alert! ^^^\n\nPerson detected in %s\n\nat %s\n\nView live feed below:\n%s\n\n(v  '  -- ' )>︻╦╤─ - - - 
     """%(camera, str(timestamp), str(feed_url))
 
     msg = MIMEMultipart()
-    msg['Subject'] = "SeamNet Alert (v ' - ')>"
+    # msg['Subject'] = "SeamNet Alert (v ' - ')>"
     msg.attach(MIMEText(text))
 
-    recipient = phone_number + CARRIERS[carrier]
+    img_data = open(img_filename, 'rb').read()
+    image = MIMEImage(img_data, name=os.path.basename(img_filename))
+
+    msg.attach(image)
+
+    # recipient = phone_number + CARRIERS[carrier]
     auth = (EMAIL, PASSWORD)
  
     server = smtplib.SMTP("smtp.gmail.com", 587)
     server.starttls()
     server.login(auth[0], auth[1])
  
-    server.sendmail(auth[0], recipient, msg.as_string())
+    server.sendmail(auth[0], RECIPIENTS, msg.as_string())
 
 if __name__ == "__main__":
     if len(sys.argv) < 4:

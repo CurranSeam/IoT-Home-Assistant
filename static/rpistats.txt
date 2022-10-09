@@ -1,0 +1,15 @@
+Server: SeamNet
+
+Uptime: 2 hours, 57 minutes
+
+Load: 0.26 0.82 0.81
+
+CPU temperature: 40.4
+
+Swap used: 0MB
+
+Processes: 215
+
+RX packets: 0.0B
+TX packets: 0.0B
+

@@ -50,17 +50,23 @@ def verify_password(password, key, index):
     """
     Takes a plain text password and verifies against encrypted value.
     """
+    value = None
     if (key in env.CREDENTIALS.keys()):
-        return __get_value(env.CREDENTIALS, "login", index)
-    raise Exception("Failed to Authenticate Username or Password")
+        value = __get_value(env.CREDENTIALS, "login", index)
 
-def verify_username(password, key, index):
+    if value is None or value != password:
+        raise Exception("Failed to Authenticate Username or Password")
+
+def verify_username(username, key, index):
     """
     Takes a plain text username and verifies against encrypted value.
     """
+    value = None
     if (key in env.CREDENTIALS.keys()):
-        return __get_value(env.CREDENTIALS, "login", index)
-    raise Exception("Failed to Authenticate Username or Password")
+        value = __get_value(env.CREDENTIALS, "login", index)
+
+    if value is None or value != username:
+        raise Exception("Failed to Authenticate Username or Password")
 
 
 def main():

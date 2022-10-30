@@ -4,6 +4,14 @@
     <!-- <meta name="viewport" content="width=device-width, initial-scale=1"> -->
     <title>SeamNet o_O</title>
     <style>
+      #logo {
+        display: inline-block;
+        margin: auto auto auto 120px;
+        float: left;
+        height: 120px;
+        width: auto; /* correct proportions to specified height */
+        border-radius: 50%; /* makes it a circle */
+      }
       body {
         /* background-image: url(../static/background.jpg);
         background-repeat: no-repeat;
@@ -16,8 +24,9 @@
         color: rgb(223, 223, 223);
         text-align: center;
         font-family: 'Segoe UI', monospace;
-        background: rgb(50, 50, 50);
-        background-size: 50px 5px 50px 5px;
+        /* background: rgb(50, 50, 50); */
+        /* background-size: 50px 5px 50px 5px; */
+        margin: auto 180px auto auto;
       }
       .marginauto {
         margin: 50px auto 50px auto;
@@ -62,36 +71,78 @@
 
     </style>
 
-    <script type="text/javascript">
-      function change_camera() {
-        // document.getElementById("feed").src="Red-Yellow.png"
+    <script
+      src="https://code.jquery.com/jquery-3.3.1.min.js"
+      integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
+      crossorigin="anonymous">
+    </script>
 
+    <script type="text/javascript">
+      var count = 0;
+      function change_camera() {
+        count++;
+        if (count == 0) {
+          document.getElementById("feed").src = "{{ url_for('video_feed', cam='driveway') }}";
+        } else if (count == 1) {
+          document.getElementById("feed").src = "{{ url_for('video_feed', cam='front_porch') }}";
+        } else if (count == 2) {
+          document.getElementById("feed").src = "{{ url_for('video_feed', cam='sw_yard') }}";
+        } else if (count == 3) {
+          document.getElementById("feed").src = "{{ url_for('video_feed', cam='w_porch') }}";
+        } else if (count == 4) {
+          document.getElementById("feed").src = "{{ url_for('video_feed', cam='n_yard') }}";
+        } else if (count == 5) {
+          document.getElementById("feed").src = "{{ url_for('video_feed', cam='ne_yard') }}";
+          count = -1;
+        }
       }
     </script>
+
+    <script>
+      function set_active_cam() {
+        var camera = String(document.getElementById("feed").src)
+        $.post( "/active_cam", {
+          active_cam: camera 
+        });
+      }
+    </script>
+
+    <script>
+      function submitPoll(id){
+        document.getElementById("next").disabled = true;
+        document.getElementById('next').innerHTML = "Loading...";
+        setTimeout(function(){document.getElementById("next").disabled = false;},500);
+        setTimeout(function(){document.getElementById("next").innerHTML = "Next Camera";},500);
+      }
+    </script>
+
   </head>
   <body>
-    <h1 class="h1 marginauto" alt="centered image">SeamNet Realtime Surveillance</h1>
+    <div class = "marginauto">
+      <a href="#"><img id="logo" class = "logo" src="https://media.istockphoto.com/vectors/cute-smiling-robot-chat-bot-say-hivector-modern-flat-cartoon-voice-vector-id1073076312?k=6&m=1073076312&s=612x612&w=0&h=bx1_BlqwV32YaMHEw0gvlG7wmwAM00I1t4kSD4FKcck="></a>
+      <h1 class="h1" alt="centered image">SeamNet Surveillance</h1>
+    </div>
+    
+    <img id="feed" style="zoom: 135%;" class="marginauto" src="{{ url_for('video_feed', cam='driveway') }}" alt="centered image">
 
-    <img id="feed" style="zoom: 135%;" class="marginauto" src="{{ url_for('video_feed') }}" alt="centered image">
+    <div style="text-align: center;" class = "marginauto">
+      <button id="next" class="button-81" role="button" style="transform: scale(1.5)" onclick="change_camera(); submitPoll();">Next Camera</button>
+    </div>
 
-    <button class="button-81" role="button">Next Camera</button>
-
-    <!-- <object class="marginauto" data={{ cpu_temp }} width="704" height="480" alt="centered image"></object> -->
-
-    <p id="stats" style="color:whitesmoke; text-align: center; font-size: 150%; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;" class="marginauto" width="704" height="480" alt="centered image"><br></p>
+    <p id="stats" style="color:whitesmoke; text-align: center; font-size: 110%; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;" width="704" height="480" class = "marginauto" alt="centered image"><br></p>
 
     <script>
 
       var latest = document.getElementById('stats');
   
       var xhr = new XMLHttpRequest();
-      xhr.open('GET', "{{ url_for('stats') }}");
+      xhr.open('GET', "{{ url_for('stats') }}", true);
   
       xhr.onreadystatechange = function() {
           var all_lines = xhr.responseText.split('\n');
           last_line = all_lines.length - 2
           // latest.textContent = all_lines[last_line - 2] + "\n" +  all_lines[last_line - 1] + "\n" + all_lines[last_line]
-          var stats = "<p>" + all_lines[last_line - 3] + "<br><br>" +  all_lines[last_line - 2] + "<br><br>" +  all_lines[last_line - 1] + "<br><br>" + all_lines[last_line]
+          var stats = "<p>" + all_lines[last_line - 4] + "<br><br>" + all_lines[last_line - 3] + "<br><br>" +  all_lines[last_line - 2] + "<br><br>" +  all_lines[last_line - 1] + "<br><br>" + all_lines[last_line]
           document.getElementById('stats').innerHTML = stats
   
           if (xhr.readyState == XMLHttpRequest.DONE) {
@@ -102,7 +153,7 @@
   
       xhr.send();
   
-  </script>
+    </script>
   
   </body>
 </html>

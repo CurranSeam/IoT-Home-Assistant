@@ -1,7 +1,5 @@
-from email.mime.base import MIMEBase
 from email.mime.text import MIMEText
 from email.mime.image import MIMEImage
-from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
 import smtplib
 import sys
@@ -22,12 +20,12 @@ RECIPIENTS = []
 def send_message(camera, timestamp, feed_url, img_filename):
     timestamp = timestamp.replace(microsecond=0) # Remove milliseconds for readabillity
 
+    title = str("SeamNet Alert").center(32)
     text = """\
-    ^^^ SeamNet Alert! ^^^\n\nPerson detected in %s\n\nat %s\n\nView live feed below:\n%s\n\n(v  '  -- ' )>︻╦╤─ - - - 
-    """%(camera, str(timestamp), str(feed_url))
+    %s\n\nPerson detected on %s\n\nat %s\n\nView live feed below:\n%s\n\n(v  '  -- ' )>︻╦╤─ - - - 
+    """%(title, camera, str(timestamp), str(feed_url))
 
     msg = MIMEMultipart()
-    # msg['Subject'] = "SeamNet Alert (v ' - ')>"
     msg.attach(MIMEText(text))
 
     img_data = open(img_filename, 'rb').read()

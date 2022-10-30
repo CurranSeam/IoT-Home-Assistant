@@ -1,11 +1,18 @@
+import sys
+sys.path.append('/')
 import env
 
-def encrypt(val, key, index=-1):
+def __encrypt(val, write, key=-1, index=-1):
     """
     Encrypt data and enter into relevant location. 
     """
     encoded_msg = FERNET.encrypt(val.encode())
+    
+    # Return encrypted value. Don't write to vault.
+    if not write:
+        return encoded_msg
 
+    # Write encrypted value to vault.
     if key in env.CAMERAS:
         env.CAMERAS[key] = encoded_msg
     elif key in env.RECIPIENTS:
@@ -15,7 +22,7 @@ def encrypt(val, key, index=-1):
     else:
         raise Exception("Invalid parameters")
 
-def decrypt(key, index=-1):
+def __decrypt(key, index=-1):
     """
     Decrypt data using the specified key and index if relevant. Returns
     result.
@@ -46,28 +53,18 @@ def __get_value(sec_type, key, index=-1):
         return env.sec_type.get(key)[index]
     return env.sec_type.get(key)
 
-def verify_password(password, key, index):
+def authenticate(data, key, index):
     """
-    Takes a plain text password and verifies against encrypted value.
-    """
-    value = None
-    if (key in env.CREDENTIALS.keys()):
-        value = __get_value(env.CREDENTIALS, "login", index)
-
-    if value is None or value != password:
-        raise Exception("Failed to Authenticate Username or Password")
-
-def verify_username(username, key, index):
-    """
-    Takes a plain text username and verifies against encrypted value.
+    Takes an input value and verifies against encrypted value.
     """
     value = None
+    enc_data = encrypt(data, False)
+
     if (key in env.CREDENTIALS.keys()):
-        value = __get_value(env.CREDENTIALS, "login", index)
+        value = __get_value(env.CREDENTIALS, key, index)
 
-    if value is None or value != username:
+    if value is None or value != enc_data:
         raise Exception("Failed to Authenticate Username or Password")
-
 
 def main():
     global FERNET
@@ -79,16 +76,16 @@ def main():
     # Encrypt all sensitive data.
     for cam in env.CAMERAS:
         data = env.CAMERAS.get(cam)
-        encrypt(data, cam)
+        __encrypt(data, cam)
 
     for recipient in env.RECIPIENTS:
         data = env.RECIPIENTS.get(recipient)
-        encrypt(data, recipient)
+        __encrypt(data, recipient)
 
     for cred in env.CREDENTIALS:
         data = env.CREDENTIALS.get(cred)
         for count, val in enumerate(data):
-            encrypt(val, cred, count)
+            __encrypt(val, cred, count)
 
 if __name__=="__main__":
     main()

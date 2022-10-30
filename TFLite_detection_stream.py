@@ -14,6 +14,7 @@ import threading
 import importlib.util
 import send_message
 import datetime
+import security as vault
 
 from flask import Flask, Response, request, make_response, render_template
 from video_stream import VideoStream
@@ -84,10 +85,14 @@ freq = cv2.getTickFrequency()
 @app.route("/")
 def index():
 	# return the rendered template
-    # TODO: change password handling
-    if request.authorization and request.authorization.username == 'user1' and request.authorization.password == 'pass1':
-        return render_template("index.html")
-    return make_response('Could not verify!', 401, {'WWW-Authenticate' : 'Basic realm="Login Required"'})
+    try:
+        # Authenticate username and password against the Vault.
+        vault.authenticate(request.authorization.username, "login", 0)
+        vault.authenticate(request.authorization.password, "login", 1)
+    except:
+        return make_response('Could not verify!', 401, {'WWW-Authenticate' : 'Basic realm="Login Required"'})
+    print("DO WE MAKE IT?")
+    return render_template("index.html")
 
 def generate_frame(cam):
 	# grab global references to the output frame and lock variables

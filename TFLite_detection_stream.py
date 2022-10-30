@@ -15,15 +15,13 @@ import importlib.util
 import send_message
 import datetime
 
-from flask import Response
-from flask import Flask
-from flask import render_template
+from flask import Flask, Response, request, make_response, render_template
 from video_stream import VideoStream
 
 import psutil
 
 # Global variables
-start_time = datetime.datetime.now()
+START_TIME = time.time()
 
 MODEL_NAME = ""
 STREAM_URL = ""
@@ -57,13 +55,24 @@ app = Flask(__name__)
 # initialize the output frame and a lock used to ensure thread-safe
 # exchanges of the output frames (useful when multiple browsers/tabs
 # are viewing the stream)
-outputFrame = None
+driveway_frame = None
+front_porch_frame = None
+sw_yard_frame = None
+w_porch_frame = None
+n_yard_frame = None
+ne_yard_frame = None
+
+DRIVEWAY = None
+FRONT_PORCH = None
+SW_YARD = None
+W_PORCH = None
+N_YARD = None
+NE_YARD = None
+
 lock = threading.Lock()
 
-# IP camera RTSP URLs
-CAMERAS = {
-    
-}
+# IP camera names
+CAMERAS = ["Driveway", "Front Porch", "SW Yard", "W Porch", "N Yard", "NE Yard"]
 
 # Used for cooloff time between sending consecutive notification messages
 message_time = datetime.datetime(1900, 1, 1)
@@ -75,37 +84,65 @@ freq = cv2.getTickFrequency()
 @app.route("/")
 def index():
 	# return the rendered template
-    return render_template("index.html")
+    # TODO: change password handling
+    if request.authorization and request.authorization.username == 'user1' and request.authorization.password == 'pass1':
+        return render_template("index.html")
+    return make_response('Could not verify!', 401, {'WWW-Authenticate' : 'Basic realm="Login Required"'})
 
-def generate_frame():
+def generate_frame(cam):
 	# grab global references to the output frame and lock variables
-	global outputFrame, lock
-	# loop over frames from the output stream
-	while True:
-		# wait until the lock is acquired
-		with lock:
-			# check if the output frame is available, otherwise skip
-			# the iteration of the loop
-			if outputFrame is None:
-				continue
-			# encode the frame in JPEG format
-			(flag, encodedImage) = cv2.imencode(".jpg", outputFrame)
-			# ensure the frame was successfully encoded
-			if not flag:
-				continue
-		# yield the output frame in the byte format
-		yield(b'--frame\r\n' b'Content-Type: image/jpeg\r\n\r\n' + 
-			bytearray(encodedImage) + b'\r\n')
+    global driveway_frame, front_porch_frame, sw_yard_frame, w_porch_frame, n_yard_frame, ne_yard_frame, lock 
 
-@app.route("/video_feed")
-def video_feed():
+    # loop over frames from the output stream
+    while True:
+        frame = None
+    
+        if (cam == "driveway"):
+            frame = driveway_frame
+        if (cam == "front_porch"):
+            frame = front_porch_frame
+        if (cam == "sw_yard"):
+            frame = sw_yard_frame
+        if (cam == "w_porch"):
+            frame = w_porch_frame
+        if (cam == "n_yard"):
+            frame = n_yard_frame
+        if (cam == "ne_yard"):
+            frame = ne_yard_frame
+
+        # wait until the lock is acquired
+        with lock:
+            # check if the output frame is available, otherwise skip
+            # the iteration of the loop
+            if frame is None:
+                continue
+            # encode the frame in JPEG format
+            (flag, encodedImage) = cv2.imencode(".jpg", frame)
+            # ensure the frame was successfully encoded
+            if not flag:
+                continue
+        # yield the output frame in the byte format
+        yield(b'--frame\r\n' b'Content-Type: image/jpeg\r\n\r\n' + 
+            bytearray(encodedImage) + b'\r\n')
+
+@app.route("/video_feed/<string:cam>/", methods=["GET"])
+def video_feed(cam):
 	# return the response generated along with the specific media
 	# type (mime type)
-	return Response(generate_frame(),
+    return Response(generate_frame(cam),
 		mimetype = "multipart/x-mixed-replace; boundary=frame")    
+
+@app.route("/active_cam", methods=['POST'])
+def active_cam():
+    global active_cam
+    cam = request.form['active_cam']
+    active_cam = cam.split("/")[-2]
+    
+    return cam
 
 @app.route("/stats")
 def stats():
+    global frame_rate_calc
 	# return the response generated along with the specific media
 	# type (mime type)
     def generate():
@@ -122,95 +159,116 @@ def stats():
             free = round(disk.free/1024.0/1024.0/1024.0,1)
             disk_total = round(disk.total/1024.0/1024.0/1024.0,1)
 
-            uptime = datetime.datetime.now() - start_time
-            # uptime = str(uptime.days) + " days " + str(uptime.seconds // 3600) + " hours " + str(uptime.seconds // 60) + " minutes "
+            time_dif = time.time() - START_TIME
+            d = divmod(time_dif, 86400) # days
+            h = divmod(d[1],3600)  # hours
+            m = divmod(h[1],60)  # minutes
+            s = m[1] # seconds
+
+            uptime = "%d days, %d hours, %d minutes, %d seconds" % (d[0],h[0],m[0], s)
  
             stats = """\
-                Server uptime: %s\nCPU temperature: %s °C\nMemory: %s\nDisk: %s
-            """%(str(uptime), 
+                FPS: %s\nServer uptime: %s\nCPU temperature: %s °C\nMemory: %s\nDisk: %s
+            """%(str(int(frame_rate_calc)),
+                 str(uptime), 
                  str(psutil.cpu_percent()), 
                  str(available) + 'MB free / ' + str(mem_total) + 'MB total ( ' + str(memory.percent) + '% )', 
                  str(free) + 'GB free / ' + str(disk_total) + 'GB total ( ' + str(disk.percent) + '% )'
                 )
             yield stats
-            time.sleep(0.2)
+            time.sleep(0.1)
 
     return Response(generate(), mimetype='text/plain')
 
 # Main function for performing detection and notifying users of activity
 def detection():
-    global frame_rate_calc, outputFrame, message_time, CAMERAS, videostream, freq, FEED_URL, CWD_PATH
+    global frame_rate_calc, driveway_frame, front_porch_frame, sw_yard_frame, w_porch_frame, n_yard_frame, ne_yard_frame, message_time, CAMERAS, DRIVEWAY, freq, FEED_URL, CWD_PATH, active_cam
+
     while True:
 
         # Start timer (for calculating frame rate)
         t1 = cv2.getTickCount()
 
         # Grab frame from video stream
-        frame1 = videostream.read()
+        frame1 = DRIVEWAY.read()
+        frame2 = FRONT_PORCH.read()
+        frame3 = SW_YARD.read()
+        frame4 = W_PORCH.read()
+        frame5 = N_YARD.read()
+        frame6 = NE_YARD.read()
 
-        # Acquire frame and resize to expected shape [1xHxWx3]
-        frame = frame1.copy()
-        frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        frame_resized = cv2.resize(frame_rgb, (width, height))
-        input_data = np.expand_dims(frame_resized, axis=0)
 
-        # Normalize pixel values if using a floating model (i.e. if model is non-quantized)
-        if floating_model:
-            input_data = (np.float32(input_data) - input_mean) / input_std
+        frames = [frame1] # frames (of any cam) to run detection on
 
-        # Perform the actual detection by running the model with the image as input
-        interpreter.set_tensor(input_details[0]['index'],input_data)
-        interpreter.invoke()
+        for idx, f in enumerate(frames):
+            # Acquire frame and resize to expected shape [1xHxWx3]
+            frame = f.copy()
+            frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            frame_resized = cv2.resize(frame_rgb, (width, height))
+            input_data = np.expand_dims(frame_resized, axis=0)
 
-        # Retrieve detection results
-        boxes = interpreter.get_tensor(output_details[boxes_idx]['index'])[0] # Bounding box coordinates of detected objects
-        classes = interpreter.get_tensor(output_details[classes_idx]['index'])[0] # Class index of detected objects
-        scores = interpreter.get_tensor(output_details[scores_idx]['index'])[0] # Confidence of detected objects
+            # Normalize pixel values if using a floating model (i.e. if model is non-quantized)
+            if floating_model:
+                input_data = (np.float32(input_data) - input_mean) / input_std
 
-        # Loop over all detections and draw detection box if confidence is above minimum threshold
-        for i in range(len(scores)):
-            if ((scores[i] > min_conf_threshold) and (scores[i] <= 1.0)):
+            # Perform the actual detection by running the model with the image as input
+            interpreter.set_tensor(input_details[0]['index'],input_data)
+            interpreter.invoke()
 
-                # Get bounding box coordinates and draw box
-                # Interpreter can return coordinates that are outside of image dimensions, need to force them to be within image using max() and min()
-                ymin = int(max(1,(boxes[i][0] * imH)))
-                xmin = int(max(1,(boxes[i][1] * imW)))
-                ymax = int(min(imH,(boxes[i][2] * imH)))
-                xmax = int(min(imW,(boxes[i][3] * imW)))
-                
-                cv2.rectangle(frame, (xmin,ymin), (xmax,ymax), (10, 255, 0), 2)
+            # Retrieve detection results
+            boxes = interpreter.get_tensor(output_details[boxes_idx]['index'])[0] # Bounding box coordinates of detected objects
+            classes = interpreter.get_tensor(output_details[classes_idx]['index'])[0] # Class index of detected objects
+            scores = interpreter.get_tensor(output_details[scores_idx]['index'])[0] # Confidence of detected objects
 
-                # Draw label
-                object_name = labels[int(classes[i])] # Look up object name from "labels" array using class index
-                label = '%s: %d%%' % (object_name, int(scores[i]*100)) # Example: 'person: 72%'
-                labelSize, baseLine = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.7, 2) # Get font size
-                label_ymin = max(ymin, labelSize[1] + 10) # Make sure not to draw label too close to top of window
-                cv2.rectangle(frame, (xmin, label_ymin-labelSize[1]-10), (xmin+labelSize[0], label_ymin+baseLine-10), (255, 255, 255), cv2.FILLED) # Draw white box to put label text in
-                cv2.putText(frame, label, (xmin, label_ymin-7), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 0), 2) # Draw label text
+            # Loop over all detections and draw detection box if confidence is above minimum threshold
+            for i in range(len(scores)):
+                if ((scores[i] > min_conf_threshold) and (scores[i] <= 1.0)):
 
-                # Handle notifications based on detection results
-                current_time = datetime.datetime.now()
-
-                if object_name == 'person' and current_time >= (message_time + datetime.timedelta(minutes = 5)):
+                    # Get bounding box coordinates and draw box
+                    # Interpreter can return coordinates that are outside of image dimensions, need to force them to be within image using max() and min()
+                    ymin = int(max(1,(boxes[i][0] * imH)))
+                    xmin = int(max(1,(boxes[i][1] * imW)))
+                    ymax = int(min(imH,(boxes[i][2] * imH)))
+                    xmax = int(min(imW,(boxes[i][3] * imW)))
                     
-                    # snapshot = frame.copy()
+                    cv2.rectangle(frame, (xmin,ymin), (xmax,ymax), (10, 255, 0), 2)
 
-                    filepath = CWD_PATH + "/snapshot.jpeg"
+                    # Draw label
+                    object_name = labels[int(classes[i])] # Look up object name from "labels" array using class index
+                    label = '%s: %d%%' % (object_name, int(scores[i]*100)) # Example: 'person: 72%'
+                    labelSize, baseLine = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.7, 2) # Get font size
+                    label_ymin = max(ymin, labelSize[1] + 10) # Make sure not to draw label too close to top of window
+                    cv2.rectangle(frame, (xmin, label_ymin-labelSize[1]-10), (xmin+labelSize[0], label_ymin+baseLine-10), (255, 255, 255), cv2.FILLED) # Draw white box to put label text in
+                    cv2.putText(frame, label, (xmin, label_ymin-7), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 0), 2) # Draw label text
 
-                    cv2.imwrite(filepath, frame)
+                    # Handle notifications based on detection results
+                    current_time = datetime.datetime.now()
 
-                    send_message.send_message(CAMERAS[STREAM_URL], current_time, FEED_URL, filepath)
+                    if object_name == 'person' and current_time >= (message_time + datetime.timedelta(minutes = 5)):
 
-                    message_time = current_time
+                        filepath = CWD_PATH + "/snapshot.jpeg"
 
-        # Draw framerate in corner of frame
-        cv2.putText(frame,'FPS: {0:.2f}'.format(frame_rate_calc),(30,50),cv2.FONT_HERSHEY_SIMPLEX,1,(255,255,0),2,cv2.LINE_AA)
+                        cv2.imwrite(filepath, frame)
+
+                        send_message.send_message(CAMERAS[idx], current_time, FEED_URL, filepath)
+
+                        message_time = current_time
+
+            # Draw framerate in corner of frame
+            # cv2.putText(frame,'FPS: {0:.2f}'.format(frame_rate_calc),(30,50),cv2.FONT_HERSHEY_SIMPLEX,1,(255,255,0),2,cv2.LINE_AA)
+
+            frames[idx] = frame
 
         # All the results have been drawn on the frame, so it's time to display it.
         # cv2.imshow('SeamNet', frame) # uncomment for local video display
 
         with lock:
-            outputFrame = frame.copy()
+            driveway_frame = frames[0].copy()
+            front_porch_frame = frame2.copy()
+            sw_yard_frame = frame3.copy()
+            w_porch_frame = frame4.copy()
+            n_yard_frame = frame5.copy()
+            ne_yard_frame = frame6.copy()
 
         # Calculate framerate
         t2 = cv2.getTickCount()
@@ -325,7 +383,12 @@ if __name__ == "__main__":
         boxes_idx, classes_idx, scores_idx = 0, 1, 2
 
     # Initialize video stream
-    videostream = VideoStream(resolution=(imW,imH), framerate=30, stream_url=STREAM_URL).start()
+    DRIVEWAY = VideoStream(resolution=(imW,imH), framerate=30, stream_url=STREAM_URL).start()
+    FRONT_PORCH = VideoStream(resolution=(imW,imH), framerate=30, stream_url=STREAM_URL.replace("channel=1", "channel=2")).start()
+    SW_YARD = VideoStream(resolution=(imW,imH), framerate=30, stream_url=STREAM_URL.replace("channel=1", "channel=3")).start()
+    W_PORCH = VideoStream(resolution=(imW,imH), framerate=30, stream_url=STREAM_URL.replace("channel=1", "channel=4")).start()
+    N_YARD = VideoStream(resolution=(imW,imH), framerate=30, stream_url=STREAM_URL.replace("channel=1", "channel=5")).start()
+    NE_YARD = VideoStream(resolution=(imW,imH), framerate=30, stream_url=STREAM_URL.replace("channel=1", "channel=6")).start()
     # time.sleep(1)
 
     # start a thread that will perform motion detection
@@ -339,4 +402,9 @@ if __name__ == "__main__":
 
     # Clean up
     cv2.destroyAllWindows()
-    videostream.stop()
+    DRIVEWAY.stop()
+    FRONT_PORCH.stop()
+    SW_YARD.stop()
+    W_PORCH.stop()
+    N_YARD.stop()
+    NE_YARD.stop()

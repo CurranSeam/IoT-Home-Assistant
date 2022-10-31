@@ -2,11 +2,30 @@ import sys
 sys.path.append('/')
 import env
 
+# We should be importing Fernet to be used here, not through the env file
+
+def authenticate(data, key, index):
+    """
+    Takes an input value and verifies against encrypted value.
+    """
+
+    # WE DONT NEED TO ENCRYPT ANYMORE SINCE FERNET IS NOT A "DETERMINISTIC AUTHENTICATED CYPHER". THIS 
+    # ENCRYPTED PASSWORD IS DIFFERENT THAN VAULT ENCRYPTED PASSWORD
+    # enc_data = __encrypt(data, False)
+
+    # if (key in env.CREDENTIALS.keys()):
+    #     value = __get_value(env.CREDENTIALS, key, index)
+    
+    dec_pwd = __decrypt(key, index)
+
+    if dec_pwd == -1 or dec_pwd != data:
+        raise Exception("Failed to Authenticate Username or Password")
+
 def __encrypt(val, write, key=-1, index=-1):
     """
     Encrypt data and enter into relevant location. 
     """
-    encoded_msg = FERNET.encrypt(val.encode())
+    encoded_msg = env.FERNET.encrypt(val.encode())
     
     # Return encrypted value. Don't write to vault.
     if not write:
@@ -40,7 +59,7 @@ def __decrypt(key, index=-1):
     else:
         raise Exception("Invalid parameters")
     
-    dec_msg = "-1" if enc_msg == "" else env.FERNET.decrypt(enc_msg).decode()
+    dec_msg = -1 if enc_msg == "" else env.FERNET.decrypt(enc_msg).decode()
     return dec_msg
 
 def __get_value(sec_type, key, index=-1):
@@ -50,42 +69,27 @@ def __get_value(sec_type, key, index=-1):
     if index not in [-1, 0, 1]:
         raise Exception("Invalid index")
     elif index in [0, 1]:
-        return env.sec_type.get(key)[index]
-    return env.sec_type.get(key)
-
-def authenticate(data, key, index):
-    """
-    Takes an input value and verifies against encrypted value.
-    """
-    value = None
-    enc_data = encrypt(data, False)
-
-    if (key in env.CREDENTIALS.keys()):
-        value = __get_value(env.CREDENTIALS, key, index)
-
-    if value is None or value != enc_data:
-        raise Exception("Failed to Authenticate Username or Password")
+        return sec_type.get(key)[index]
+    return sec_type.get(key)
 
 def main():
-    global FERNET
-
-    # Utilize Symmetric-key Encryption. 
+    # Utilize Symmetric-key Encryption.
     key = env.Fernet.generate_key()
-    FERNET = env.Fernet(key)
+    env.FERNET = env.Fernet(key)
 
     # Encrypt all sensitive data.
     for cam in env.CAMERAS:
         data = env.CAMERAS.get(cam)
-        __encrypt(data, cam)
+        __encrypt(data, True, cam)
 
     for recipient in env.RECIPIENTS:
         data = env.RECIPIENTS.get(recipient)
-        __encrypt(data, recipient)
+        __encrypt(data, True, recipient)
 
     for cred in env.CREDENTIALS:
         data = env.CREDENTIALS.get(cred)
         for count, val in enumerate(data):
-            __encrypt(val, cred, count)
+            __encrypt(val, True, cred, count)
 
 if __name__=="__main__":
     main()

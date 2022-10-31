@@ -21,6 +21,9 @@ from video_stream import VideoStream
 
 import psutil
 
+# start encryption process
+vault.main()
+
 # Global variables
 START_TIME = time.time()
 
@@ -91,7 +94,6 @@ def index():
         vault.authenticate(request.authorization.password, "login", 1)
     except:
         return make_response('Could not verify!', 401, {'WWW-Authenticate' : 'Basic realm="Login Required"'})
-    print("DO WE MAKE IT?")
     return render_template("index.html")
 
 def generate_frame(cam):

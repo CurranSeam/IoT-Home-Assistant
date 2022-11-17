@@ -15,6 +15,7 @@ def authenticate(data, key, index):
 
     # if (key in env.CREDENTIALS.keys()):
     #     value = __get_value(env.CREDENTIALS, key, index)
+
     
     dec_pwd = __decrypt(key, index)
 
@@ -46,7 +47,7 @@ def __decrypt(key, index=-1):
     Decrypt data using the specified key and index if relevant. Returns
     result.
     """
-
+    
     dec_msg = ""
     enc_msg = ""
     if key in env.CAMERAS:
@@ -62,15 +63,15 @@ def __decrypt(key, index=-1):
     dec_msg = -1 if enc_msg == "" else env.FERNET.decrypt(enc_msg).decode()
     return dec_msg
 
-def __get_value(sec_type, key, index=-1):
+def get_value(key, index=-1):
     """
-    Reads from vault and returns encrypted value.
+    Reads from vault and returns decrypted value.
     """
     if index not in [-1, 0, 1]:
         raise Exception("Invalid index")
     elif index in [0, 1]:
-        return sec_type.get(key)[index]
-    return sec_type.get(key)
+        return __decrypt(key, index)
+    return __decrypt(key)
 
 def main():
     # Utilize Symmetric-key Encryption.

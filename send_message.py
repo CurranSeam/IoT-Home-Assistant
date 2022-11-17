@@ -4,22 +4,18 @@ from email.mime.multipart import MIMEMultipart
 import smtplib
 import sys
 import os
- 
-CARRIERS = {
-    "att": "@mms.att.net",
-    "tmobile": "@tmomail.net",
-    "verizon": "@vtex.com",
-    "sprint": "@page.nextel.com"
-}
- 
-EMAIL = ""
-PASSWORD = ""
+import security as vault
 
-RECIPIENTS = []
+import sys
+sys.path.append('/')
+import env
  
-def send_message(camera, timestamp, feed_url, img_filename):
+def send_message(camera, timestamp, feed_url, img_filename, carrier = "tmobile"):
+    """
+    Sends an SMS message via a carrier through SMTP. 
+    """
+
     timestamp = timestamp.replace(microsecond=0) # Remove milliseconds for readabillity
-
     title = str("SeamNet Alert").center(32)
     text = """\
     %s\n\nPerson detected on %s\n\nat %s\n\nView live feed below:\n%s\n\n(v  '  -- ' )>︻╦╤─ - - - 
@@ -33,14 +29,17 @@ def send_message(camera, timestamp, feed_url, img_filename):
 
     msg.attach(image)
 
-    # recipient = phone_number + CARRIERS[carrier]
-    auth = (EMAIL, PASSWORD)
+    email = vault.get_value("sms", 0)
+    password = vault.get_value("sms", 1)
+    recipients = [vault.get_value(person) + env.CARRIERS[carrier] for person in env.RECIPIENTS.keys()] 
+
+    auth = (email, password)
  
     server = smtplib.SMTP("smtp.gmail.com", 587)
     server.starttls()
     server.login(auth[0], auth[1])
  
-    server.sendmail(auth[0], RECIPIENTS, msg.as_string())
+    server.sendmail(auth[0], recipients, msg.as_string())
 
 if __name__ == "__main__":
     if len(sys.argv) < 4:

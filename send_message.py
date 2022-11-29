@@ -5,18 +5,13 @@ import smtplib
 import sys
 import os
 import security as vault
-
-import sys
-sys.path.append('/')
-import env
  
 def send_message(camera, timestamp, feed_url, img_filename, carrier = "tmobile"):
     """
     Sends an SMS message via a carrier through SMTP. 
     """
-
     timestamp = timestamp.replace(microsecond=0) # Remove milliseconds for readabillity
-    title = str("SeamNet Alert").center(32)
+    title = str("SeamNet Alert").center(31)
     text = """\
     %s\n\nPerson detected on %s\n\nat %s\n\nView live feed below:\n%s\n\n(v  '  -- ' )>︻╦╤─ - - - 
     """%(title, camera, str(timestamp), str(feed_url))
@@ -31,7 +26,13 @@ def send_message(camera, timestamp, feed_url, img_filename, carrier = "tmobile")
 
     email = vault.get_value("sms", 0)
     password = vault.get_value("sms", 1)
-    recipients = [vault.get_value(person) + env.CARRIERS[carrier] for person in env.RECIPIENTS.keys()] 
+
+    # Decryption is not needed for carrier addresses since they are not encrypted.
+    carrier_addr = vault.get_env("carriers")[carrier]
+    people = vault.get_env("recipients")
+
+    # Populates list of SMS recipients ["phone_no" + "carrier_addr" ... n]
+    recipients = [vault.get_value(person) + carrier_addr for person in people.keys()] 
 
     auth = (email, password)
  

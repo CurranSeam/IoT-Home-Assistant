@@ -283,9 +283,9 @@ if __name__ == "__main__":
     # Define and parse input arguments
     parser = argparse.ArgumentParser()
     parser.add_argument('--modeldir', help='Folder the .tflite file is located in',
-                        required=True)
+                        default="Sample_TFLite_model")
     parser.add_argument('--streamurl', help='The full URL of the video stream e.g. http://ipaddress:port/stream/video.mjpeg',
-                        required=True)
+                        default=vault.get_value("cameras", "DRIVEWAY", "url"))
     parser.add_argument('--graph', help='Name of the .tflite file, if different than detect.tflite',
                         default='detect.tflite')
     parser.add_argument('--labels', help='Name of the labelmap file, if different than labelmap.txt',
@@ -293,7 +293,7 @@ if __name__ == "__main__":
     parser.add_argument('--threshold', help='Minimum confidence threshold for displaying detected objects',
                         default=0.5)
     parser.add_argument('--resolution', help='Desired webcam resolution in WxH. If the webcam does not support the resolution entered, errors may occur.',
-                        default='1280x720')
+                        default='704x480')
     parser.add_argument('--edgetpu', help='Use Coral Edge TPU Accelerator to speed up detection',
                         action='store_true')
     parser.add_argument("-i", "--ip", type=str, required=True,

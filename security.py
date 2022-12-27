@@ -4,24 +4,51 @@ import env
 
 # We should be importing Fernet to be used here, not through the env file
 
-def authenticate(data, key, index):
+DISPATCHER = {
+    "CAMERAS" : env.CAMERAS,
+    "RECIPIENTS" : env.RECIPIENTS,
+    "CREDENTIALS" : env.CREDENTIALS,
+    "CARRIERS" : env.CARRIERS
+}
+
+def authenticate(username, password):
     """
     Takes an input value and verifies against encrypted value.
     """
+    dec_user = __decrypt("CREDENTIALS", "user_login", "username")
+    dec_pass = __decrypt("CREDENTIALS", "user_login", "password")
 
-    # WE DONT NEED TO ENCRYPT ANYMORE SINCE FERNET IS NOT A "DETERMINISTIC AUTHENTICATED CYPHER". THIS 
-    # ENCRYPTED PASSWORD IS DIFFERENT THAN VAULT ENCRYPTED PASSWORD
-    # enc_data = __encrypt(data, False)
-
-    # if (key in env.CREDENTIALS.keys()):
-    #     value = __get_value(env.CREDENTIALS, key, index)
-    
-    dec_pwd = __decrypt(key, index)
-
-    if dec_pwd == -1 or dec_pwd != data:
+    if dec_user == -1 or dec_pass == -1 or dec_user != username or dec_pass != password:
         raise Exception("Failed to Authenticate Username or Password")
 
-def __encrypt(val, write, key=-1, index=-1):
+def get_value(env_var, key, field):
+    """
+    Reads from vault and returns decrypted value.
+    """
+    dec_val = ""
+    try:
+        dec_val = __decrypt(env_var, key, field)
+    except Exception as e:
+        raise e
+    
+    return dec_val
+
+def get_keys(env_var, key=-1):
+    """
+    Reads from vault and returns env keys.
+    """
+    env_var = env_var.upper()
+    try:
+        if key == -1:
+            # Return outer keys
+            return DISPATCHER.get(env_var).keys()
+        # Return inner keys
+        return DISPATCHER.get(env_var).get(key).keys()
+
+    except:
+        raise Exception("Invalid environment variable or key name")
+
+def __encrypt(env_var, val, write, key, field):
     """
     Encrypt data and enter into relevant location. 
     """
@@ -32,45 +59,27 @@ def __encrypt(val, write, key=-1, index=-1):
         return encoded_msg
 
     # Write encrypted value to vault.
-    if key in env.CAMERAS:
-        env.CAMERAS[key] = encoded_msg
-    elif key in env.RECIPIENTS:
-        env.RECIPIENTS[key] = encoded_msg
-    elif key in env.CREDENTIALS and index != -1:
-        env.CREDENTIALS[key][index] = encoded_msg
-    else:
+    try:
+        fetched_env = DISPATCHER.get(env_var)
+        fetched_env[key][field] = encoded_msg
+    except:
         raise Exception("Invalid parameters")
 
-def __decrypt(key, index=-1):
+def __decrypt(env_var, key, field):
     """
     Decrypt data using the specified key and index if relevant. Returns
     result.
     """
-
     dec_msg = ""
     enc_msg = ""
-    if key in env.CAMERAS:
-        enc_msg = env.CAMERAS.get(key)
-    elif key in env.RECIPIENTS:
-        enc_msg = env.RECIPIENTS.get(key)
-    elif key in env.CREDENTIALS and index in [0, 1]:
-        values = env.CREDENTIALS.get(key)
-        enc_msg = values[index]
-    else:
+
+    try:
+        enc_msg = DISPATCHER.get(env_var.upper()).get(key).get(field)
+    except:
         raise Exception("Invalid parameters")
     
     dec_msg = -1 if enc_msg == "" else env.FERNET.decrypt(enc_msg).decode()
     return dec_msg
-
-def __get_value(sec_type, key, index=-1):
-    """
-    Reads from vault and returns encrypted value.
-    """
-    if index not in [-1, 0, 1]:
-        raise Exception("Invalid index")
-    elif index in [0, 1]:
-        return sec_type.get(key)[index]
-    return sec_type.get(key)
 
 def main():
     # Utilize Symmetric-key Encryption.
@@ -78,18 +87,11 @@ def main():
     env.FERNET = env.Fernet(key)
 
     # Encrypt all sensitive data.
-    for cam in env.CAMERAS:
-        data = env.CAMERAS.get(cam)
-        __encrypt(data, True, cam)
+    for env_var in DISPATCHER:
+        for key in DISPATCHER.get(env_var):
+            for inner_key in DISPATCHER.get(env_var).get(key):
+                data = DISPATCHER.get(env_var).get(key).get(inner_key)
+                __encrypt(env_var, data, True, key, inner_key)
 
-    for recipient in env.RECIPIENTS:
-        data = env.RECIPIENTS.get(recipient)
-        __encrypt(data, True, recipient)
-
-    for cred in env.CREDENTIALS:
-        data = env.CREDENTIALS.get(cred)
-        for count, val in enumerate(data):
-            __encrypt(val, True, cred, count)
-
-if __name__=="__main__":
+if __name__ == "security":
     main()

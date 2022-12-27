@@ -5,6 +5,7 @@
 # This script will work with codecs supported by CV2 (e.g. MJPEG, RTSP, ...).
 
 # Import packages
+import security as vault
 import os
 import argparse
 import cv2
@@ -12,17 +13,13 @@ import numpy as np
 import time
 import threading
 import importlib.util
-import send_message
 import datetime
-import security as vault
 
 from flask import Flask, Response, request, make_response, render_template
+import sms_service
 from video_stream import VideoStream
 
 import psutil
-
-# start encryption process
-vault.main()
 
 # Global variables
 START_TIME = time.time()
@@ -90,8 +87,7 @@ def index():
 	# return the rendered template
     try:
         # Authenticate username and password against the Vault.
-        vault.authenticate(request.authorization.username, "login", 0)
-        vault.authenticate(request.authorization.password, "login", 1)
+        vault.authenticate(request.authorization.username, request.authorization.password)
     except:
         return make_response('Could not verify!', 401, {'WWW-Authenticate' : 'Basic realm="Login Required"'})
     return render_template("index.html")
@@ -139,6 +135,7 @@ def video_feed(cam):
     return Response(generate_frame(cam),
 		mimetype = "multipart/x-mixed-replace; boundary=frame")    
 
+# UNUSED
 @app.route("/active_cam", methods=['POST'])
 def active_cam():
     global active_cam
@@ -252,13 +249,9 @@ def detection():
                     current_time = datetime.datetime.now()
 
                     if object_name == 'person' and current_time >= (message_time + datetime.timedelta(minutes = 5)):
-
                         filepath = CWD_PATH + "/snapshot.jpeg"
-
                         cv2.imwrite(filepath, frame)
-
-                        send_message.send_message(CAMERAS[idx], current_time, FEED_URL, filepath)
-
+                        sms_service.send_message(CAMERAS[idx], current_time, FEED_URL, filepath)
                         message_time = current_time
 
             # Draw framerate in corner of frame

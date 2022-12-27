@@ -2,24 +2,18 @@ from email.mime.text import MIMEText
 from email.mime.image import MIMEImage
 from email.mime.multipart import MIMEMultipart
 import smtplib
-import sys
 import os
- 
-CARRIERS = {
-    "att": "@mms.att.net",
-    "tmobile": "@tmomail.net",
-    "verizon": "@vtex.com",
-    "sprint": "@page.nextel.com"
-}
- 
-EMAIL = ""
-PASSWORD = ""
+import security as vault
 
-RECIPIENTS = []
- 
+EMAIL = vault.get_value("credentials", "sms_auth", "username")
+PASSWORD = vault.get_value("credentials", "sms_auth", "password")
+CARRIER_ADDR = vault.get_value("carriers", "tmobile", "address")
+
 def send_message(camera, timestamp, feed_url, img_filename):
+    """
+    Sends an SMS message via a carrier through SMTP. 
+    """
     timestamp = timestamp.replace(microsecond=0) # Remove milliseconds for readabillity
-
     title = str("SeamNet Alert").center(32)
     text = """\
     %s\n\nPerson detected on %s\n\nat %s\n\nView live feed below:\n%s\n\n(v  '  -- ' )>︻╦╤─ - - - 
@@ -33,22 +27,24 @@ def send_message(camera, timestamp, feed_url, img_filename):
 
     msg.attach(image)
 
-    # recipient = phone_number + CARRIERS[carrier]
     auth = (EMAIL, PASSWORD)
- 
+
     server = smtplib.SMTP("smtp.gmail.com", 587)
     server.starttls()
     server.login(auth[0], auth[1])
- 
-    server.sendmail(auth[0], RECIPIENTS, msg.as_string())
 
-if __name__ == "__main__":
-    if len(sys.argv) < 4:
-        print(f"Usage: python3 {sys.argv[0]} <PHONE_NUMBER> <CARRIER> <MESSAGE>")
-        sys.exit(0)
- 
-    phone_number = sys.argv[1]
-    carrier = sys.argv[2]
-    message = sys.argv[3]
- 
-    send_message(phone_number, carrier, message)
+    recipients = get_active_numbers()
+
+    server.sendmail(auth[0], recipients, msg.as_string())
+
+def get_active_numbers():
+    people = []
+
+    # Add active phone numbers
+    for name in vault.get_keys("recipients"):
+        active = int(vault.get_value("recipients", name, "active"))
+        if active: 
+            people.append(vault.get_value("recipients", name, "phone_number")) 
+
+    # Returns list of SMS recipients ["phone_no" + "carrier_addr" ... n]
+    return [phone_no + CARRIER_ADDR for phone_no in people]

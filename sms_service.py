@@ -5,10 +5,6 @@ import smtplib
 import os
 import security as vault
 
-EMAIL = vault.get_value("credentials", "sms_auth", "username")
-PASSWORD = vault.get_value("credentials", "sms_auth", "password")
-CARRIER_ADDR = vault.get_value("carriers", "tmobile", "address")
-
 def send_message(camera, timestamp, feed_url, img_filename):
     """
     Sends an SMS message via a carrier through SMTP. 
@@ -27,7 +23,8 @@ def send_message(camera, timestamp, feed_url, img_filename):
 
     msg.attach(image)
 
-    auth = (EMAIL, PASSWORD)
+    auth = (vault.get_value("credentials", "sms_auth", "username"), 
+            vault.get_value("credentials", "sms_auth", "password"))
 
     server = smtplib.SMTP("smtp.gmail.com", 587)
     server.starttls()
@@ -47,4 +44,5 @@ def get_active_numbers():
             people.append(vault.get_value("recipients", name, "phone_number")) 
 
     # Returns list of SMS recipients ["phone_no" + "carrier_addr" ... n]
-    return [phone_no + CARRIER_ADDR for phone_no in people]
+    address = vault.get_value("carriers", "tmobile", "address")
+    return [phone_no + address for phone_no in people]

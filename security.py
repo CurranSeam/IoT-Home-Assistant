@@ -54,6 +54,7 @@ def __encrypt(env_var, val, write, key, field):
     """
     encoded_msg = env.FERNET.encrypt(val.encode())
     
+    # ME MAY NEED TO REMOVE THIS
     # Return encrypted value. Don't write to vault.
     if not write:
         return encoded_msg

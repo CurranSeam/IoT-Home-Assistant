@@ -135,14 +135,14 @@ def video_feed(cam):
     return Response(generate_frame(cam),
 		mimetype = "multipart/x-mixed-replace; boundary=frame")    
 
-# UNUSED
-@app.route("/active_cam", methods=['POST'])
-def active_cam():
-    global active_cam
-    cam = request.form['active_cam']
-    active_cam = cam.split("/")[-2]
+# # UNUSED
+# @app.route("/active_cam", methods=['POST'])
+# def active_cam():
+#     global active_cam
+#     cam = request.form['active_cam']
+#     active_cam = cam.split("/")[-2]
     
-    return cam
+#     return cam
 
 @app.route("/stats")
 def stats():

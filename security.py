@@ -48,6 +48,13 @@ def get_keys(env_var, key=-1):
     except:
         raise Exception("Invalid environment variable or key name")
 
+def put_value(env_var, key, field, val):
+    # Restructure part of https://trello.com/c/22FPrkYW
+    try:
+        __encrypt(env_var, val, True, key, field)
+    except Exception as e:
+        raise Exception("PUT operation failed: \n" + str(e))
+
 def __encrypt(env_var, val, write, key, field):
     """
     Encrypt data and enter into relevant location. 
@@ -61,10 +68,10 @@ def __encrypt(env_var, val, write, key, field):
 
     # Write encrypted value to vault.
     try:
-        fetched_env = DISPATCHER.get(env_var)
+        fetched_env = DISPATCHER.get(env_var.upper())
         fetched_env[key][field] = encoded_msg
-    except:
-        raise Exception("Invalid parameters")
+    except Exception as e:
+        raise Exception("Encryption failed: \n" + e)
 
 def __decrypt(env_var, key, field):
     """

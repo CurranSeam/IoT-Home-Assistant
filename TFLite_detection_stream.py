@@ -15,7 +15,7 @@ import threading
 import importlib.util
 import datetime
 
-from flask import Flask, Response, request, make_response, render_template
+from flask import Flask, Response, request, make_response, render_template, jsonify
 import sms_service
 from video_stream import VideoStream
 
@@ -51,6 +51,7 @@ classes_idx = None
 scores_idx = None
 
 # initialize a flask object
+# MOVE TO APPLICATION MODULE
 app = Flask(__name__)    
 
 # initialize the output frame and a lock used to ensure thread-safe
@@ -82,6 +83,7 @@ message_time = datetime.datetime(1900, 1, 1)
 frame_rate_calc = 1
 freq = cv2.getTickFrequency()
 
+# MOVE TO APPLICATION MODULE
 @app.route("/")
 def index():
 	# return the rendered template
@@ -91,6 +93,47 @@ def index():
     except:
         return make_response('Could not verify!', 401, {'WWW-Authenticate' : 'Basic realm="Login Required"'})
     return render_template("index.html")
+
+# MOVE TO APPLICATION MODULE
+# Define the custom Jinja filter
+@app.template_filter()
+def zip_lists(a, b, c):
+    return zip(a, b, c)
+
+# MOVE TO APPLICATION MODULE
+# Register the custom filter with Jinja
+app.jinja_env.filters['zip'] = zip_lists
+
+# MOVE TO APPLICATION MODULE
+@app.route("/settings")
+def settings():
+    status = []
+    recipients = vault.get_keys("recipients")
+    numbers = []
+    for key in recipients:
+        status.append(int(vault.get_value("recipients", key, "active")))
+        numbers.append("XXX-XXX-" + vault.get_value("recipients", key, "phone_number")[-4:])
+    return render_template("settings.html", users=recipients, statuses=status, phone_nums=numbers)
+
+# MOVE TO APPLICATION MODULE
+@app.route('/users/<string:user>/sms-notifications', methods=["PUT"])
+def update_sms_status(user):
+    data = request.get_json()
+    sms_status = int(data['sms_notifications'])
+
+    # Update the user's record in the database
+    vault.put_value("recipients", user, "active", str(sms_status))
+
+    # Send sms notification of status change
+    if sms_status:
+        # we are opting in to sms notifications
+        sms_service.send_opt_message(user, True, FEED_URL + "/settings")
+    else:
+        # opted out
+        sms_service.send_opt_message(user, False, FEED_URL + "/settings")
+
+    # Return a response to the frontend
+    return jsonify({'success': True}), 200
 
 def generate_frame(cam):
 	# grab global references to the output frame and lock variables
@@ -128,6 +171,7 @@ def generate_frame(cam):
         yield(b'--frame\r\n' b'Content-Type: image/jpeg\r\n\r\n' + 
             bytearray(encodedImage) + b'\r\n')
 
+# MOVE TO APPLICATION MODULE
 @app.route("/video_feed/<string:cam>/", methods=["GET"])
 def video_feed(cam):
 	# return the response generated along with the specific media
@@ -136,6 +180,7 @@ def video_feed(cam):
 		mimetype = "multipart/x-mixed-replace; boundary=frame")    
 
 # # UNUSED
+# MOVE TO APPLICATION MODULE (If used)
 # @app.route("/active_cam", methods=['POST'])
 # def active_cam():
 #     global active_cam
@@ -144,6 +189,7 @@ def video_feed(cam):
     
 #     return cam
 
+# MOVE TO APPLICATION MODULE
 @app.route("/stats")
 def stats():
     global frame_rate_calc

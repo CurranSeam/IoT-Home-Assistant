@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <!-- <meta name="viewport" content="width=device-width, initial-scale=1"> -->
+    <title>Settings</title>
+    <style>
+      #logo {
+        display: inline-block;
+        margin: auto auto auto 120px;
+        float: left;
+        height: 120px;
+        width: auto; /* correct proportions to specified height */
+        border-radius: 50%; /* makes it a circle */
+      }
+      body {
+        /* background-image: url(../static/background.jpg);
+        background-repeat: no-repeat;
+        background-attachment: fixed;  
+        background-size: cover; */
+        background: rgb(255, 255, 255)
+      }
+      h1 {
+        font-size: 320%;
+        color: rgb(223, 223, 223);
+        text-align: center;
+        font-family: 'Segoe UI', monospace;
+        /* background: rgb(50, 50, 50); */
+        /* background-size: 50px 5px 50px 5px; */
+        margin: auto 180px auto auto;
+      }
+
+      .marginauto {
+        margin: 50px auto 50px auto;
+        display: block;
+        /* background: rgb(50, 50, 50); */
+      }
+
+      .user-table {
+        margin: 0 auto; /* center the table */
+        border-collapse: collapse; /* remove the cell borders */
+        width: 50%; /* set the table width */
+      }
+
+      .user-table th,
+      .user-table td {
+        padding: 10px; /* add padding to the cells */
+        text-align: left; /* align the cell content to the left */
+      }
+
+      .user-table th {
+        background-color: #f5f5f5; /* add a light gray background to the header cells */
+        font-weight: bold; /* make the header text bold */
+      }
+
+      .user-table tr:nth-child(even) {
+        background-color: #f1f1f1; /* add a light gray background to every even row */
+      }
+
+    </style>
+
+    <script
+      src="https://code.jquery.com/jquery-3.3.1.min.js"
+      integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
+      crossorigin="anonymous">
+    </script>
+
+  </head>
+  <body>
+    <div class = "marginauto">
+      <a href="#"><img id="logo" class = "logo" src="https://media.istockphoto.com/vectors/cute-smiling-robot-chat-bot-say-hivector-modern-flat-cartoon-voice-vector-id1073076312?k=6&m=1073076312&s=612x612&w=0&h=bx1_BlqwV32YaMHEw0gvlG7wmwAM00I1t4kSD4FKcck="></a>
+      <h1 class="h1" alt="centered image">Settings</h1>
+    </div>
+
+    <table class="user-table">
+      <tr>
+        <th>User</th>
+        <th>Phone</th>
+        <th>SMS Notifications</th>
+      </tr>
+      <tbody>
+        {% for user, num, status in users|zip(phone_nums, statuses) %}
+          <tr>
+            <td>{{ user }}</td>
+            <td>{{ num }}</td>
+            <td>
+              <input type="checkbox" name="sms_notifications" data-user-id="{{ user }}" {% if status %}checked{% endif %} onclick="updateSmsNotifications(this)">
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <script>
+      function updateSmsNotifications(checkbox) {
+        // Get the user ID from the "data-user-id" attribute
+        var user = checkbox.getAttribute('data-user-id');
+
+        // Send an HTTP PUT request to the backend to update the user's SMS notifications
+        fetch('/users/' + user + '/sms-notifications', {
+          method: 'PUT',
+          body: JSON.stringify({
+            sms_notifications: checkbox.checked
+          }),
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        })
+        .then(function(response) {
+          // Handle the response from the backend
+        })
+        .catch(function(error) {
+          // Handle any errors
+        });
+      }
+    </script>
+  </body>
+</html>

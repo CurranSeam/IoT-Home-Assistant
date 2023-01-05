@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
+    <meta http-equiv="Pragma" content="no-cache"/>
+    <meta http-equiv="Expires" content="0"/>
+
+    <title>SeamNet - Stats</title>
+    <link rel="stylesheet" href="../static/styles.css">
+  </head>
+  
+  <body>
+    <div id="navbar"></div>
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js" integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy" crossorigin="anonymous"></script>
+    <script>
+      $(function(){
+        $("#navbar").load("../static/navbar.html");
+      });
+    </script>
+
+    <div class = "marginauto" alt="centered image">
+      <h1 class="h1">Realtime Stats</h1>
+    </div>
+
+    <p id="stats" style="text-align: center; font-size: 110%; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;" width="704" height="480" class = "marginauto" alt="centered image"><br></p>
+
+    <script>
+      var latest = document.getElementById('stats');
+      var xhr = new XMLHttpRequest();
+      xhr.open('GET', "{{ url_for('get_stats') }}", true);
+  
+      xhr.onreadystatechange = function() {
+          var all_lines = xhr.responseText.split('\n');
+          last_line = all_lines.length - 2
+  
+          var stats = "<p>" + all_lines[last_line - 4] + "<br><br>" + all_lines[last_line - 3] + "<br><br>" +  all_lines[last_line - 2] + "<br><br>" +  all_lines[last_line - 1] + "<br><br>" + all_lines[last_line]
+          document.getElementById('stats').innerHTML = stats
+  
+          if (xhr.readyState == XMLHttpRequest.DONE) {
+              /*alert("The End of Stream");*/
+              latest.textContent = "Video stream offline :O("
+          }
+      }
+      xhr.send();
+    </script>
+
+  </body>
+</html>

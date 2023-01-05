@@ -1,0 +1,139 @@
+/* NAVBAR */
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background-color: #f5f5f5;
+}
+.header {
+  /* position: fixed; */
+  left: 0;
+  width: 100%;
+  height: 150px;
+  background-color: #fff;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  z-index: 1;
+}
+.logo {
+  width: auto;
+  height: 150px;
+  float: left;
+  margin: auto 20px;
+}
+.title {
+  font-size: 24px;
+  color: #333;
+  margin: 0;
+  padding: 20px;
+  text-align: center;
+}
+/* Navigation styles */
+nav {
+  display: flex;
+  align-items: center;
+  height: 100%;
+}
+nav ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  height: 100%;
+}
+nav li {
+  margin: 0 10px;
+  font-size: 30px;
+}
+nav a {
+  display: block;
+  padding: 10px 20px;
+  color: #333;
+  text-decoration: none;
+}
+nav a.active {
+  border-bottom: 3px solid rgb(79, 158, 255);
+}
+nav a:hover {
+  background-color: #1e293b;
+  color: #fff;
+}
+
+/* DISPLAY */
+h1 {
+  font-size: 320%;
+  color: #1e293b;
+  text-align: center;
+  font-family: 'Segoe UI', monospace;
+}
+.marginauto {
+  margin: 50px auto 50px auto;
+  display: block;
+}
+
+/* FEED BUTTON */
+.button-81 {
+  background-color: #fff;
+  border: 0 solid #e2e8f0;
+  border-radius: 1.5rem;
+  box-sizing: border-box;
+  color: #0d172a;
+  cursor: pointer;
+  display: inline-block;
+  font-family: "Basier circle",-apple-system,system-ui,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans",sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Noto Color Emoji";
+  font-size: 1.1rem;
+  font-weight: 600;
+  line-height: 1;
+  padding: 1rem 1.6rem;
+  text-align: center;
+  text-decoration: none #0d172a solid;
+  text-decoration-thickness: auto;
+  transition: all .1s cubic-bezier(.4, 0, .2, 1);
+  box-shadow: 0px 1px 2px rgba(166, 175, 195, 0.25);
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+}
+.button-81:hover {
+  background-color: #1e293b;
+  color: #fff;
+}
+@media (min-width: 768px) {
+  .button-81 {
+    font-size: 1.125rem;
+    padding: 1rem 2rem;
+  }
+}
+
+/* SETTINGS */
+#tableContainer-1 {
+  height: 100%;
+  width: 100%;
+  display: table;
+}
+#tableContainer-2 {
+  vertical-align: middle;
+  display: table-cell;
+  height: 100%;
+}
+.user-table {
+  margin: 0 auto; /* center the table */
+  border-collapse: collapse; /* remove the cell borders */
+  width: 50%; /* set the table width */
+}
+.user-table th,
+.user-table td {
+  padding: 10px; /* add padding to the cells */
+  text-align: left; /* align the cell content to the left */
+  font-size: 20px;
+}
+.user-table th {
+  background-color: #f5f5f5; /* add a light gray background to the header cells */
+  font-weight: bold; /* make the header text bold */
+}
+.user-table tr:nth-child(even) {
+  background-color: #f1f1f1; /* add a light gray background to every even row */
+}
+input.checkbox {
+  height: 35px;
+  width: 35px;
+}

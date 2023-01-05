@@ -116,6 +116,11 @@ def settings():
     return render_template("settings.html", users=recipients, statuses=status, phone_nums=numbers)
 
 # MOVE TO APPLICATION MODULE
+@app.route("/stats")
+def stats():
+    return render_template("stats.html")
+
+# MOVE TO APPLICATION MODULE
 @app.route('/users/<string:user>/sms-notifications', methods=["PUT"])
 def update_sms_status(user):
     data = request.get_json()
@@ -190,8 +195,8 @@ def video_feed(cam):
 #     return cam
 
 # MOVE TO APPLICATION MODULE
-@app.route("/stats")
-def stats():
+@app.route("/get_stats")
+def get_stats():
     global frame_rate_calc
 	# return the response generated along with the specific media
 	# type (mime type)

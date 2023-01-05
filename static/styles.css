@@ -123,11 +123,11 @@ h1 {
 .user-table th,
 .user-table td {
   padding: 10px; /* add padding to the cells */
-  text-align: left; /* align the cell content to the left */
+  text-align: center; /* align the cell content to the left */
   font-size: 20px;
 }
 .user-table th {
-  background-color: #f5f5f5; /* add a light gray background to the header cells */
+  background-color: #dddddd; /* add a light gray background to the header cells */
   font-weight: bold; /* make the header text bold */
 }
 .user-table tr:nth-child(even) {

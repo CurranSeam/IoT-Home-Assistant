@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <!-- <meta name="viewport" content="width=device-width, initial-scale=1"> -->
+    <title>SeamNet o_O</title>
+    <style>
+      #logo {
+        display: inline-block;
+        margin: auto auto auto 120px;
+        float: left;
+        height: 120px;
+        width: auto; /* correct proportions to specified height */
+        border-radius: 50%; /* makes it a circle */
+      }
+      body {
+        /* background-image: url(../static/background.jpg);
+        background-repeat: no-repeat;
+        background-attachment: fixed;  
+        background-size: cover; */
+        background: rgb(28, 28, 28)
+      }
+      h1 {
+        font-size: 320%;
+        color: rgb(223, 223, 223);
+        text-align: center;
+        font-family: 'Segoe UI', monospace;
+        /* background: rgb(50, 50, 50); */
+        /* background-size: 50px 5px 50px 5px; */
+        margin: auto 180px auto auto;
+      }
+      .marginauto {
+        margin: 50px auto 50px auto;
+        display: block;
+        /* background: rgb(50, 50, 50); */
+      }
+
+      .button-81 {
+        background-color: #fff;
+        border: 0 solid #e2e8f0;
+        border-radius: 1.5rem;
+        box-sizing: border-box;
+        color: #0d172a;
+        cursor: pointer;
+        display: inline-block;
+        font-family: "Basier circle",-apple-system,system-ui,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans",sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Noto Color Emoji";
+        font-size: 1.1rem;
+        font-weight: 600;
+        line-height: 1;
+        padding: 1rem 1.6rem;
+        text-align: center;
+        text-decoration: none #0d172a solid;
+        text-decoration-thickness: auto;
+        transition: all .1s cubic-bezier(.4, 0, .2, 1);
+        box-shadow: 0px 1px 2px rgba(166, 175, 195, 0.25);
+        user-select: none;
+        -webkit-user-select: none;
+        touch-action: manipulation;
+      }
+
+      .button-81:hover {
+        background-color: #1e293b;
+        color: #fff;
+      }
+
+      @media (min-width: 768px) {
+        .button-81 {
+          font-size: 1.125rem;
+          padding: 1rem 2rem;
+        }
+      }
+
+    </style>
+
+    <script
+      src="https://code.jquery.com/jquery-3.3.1.min.js"
+      integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
+      crossorigin="anonymous">
+    </script>
+
+    <script type="text/javascript">
+      var count = 0;
+      function change_camera() {
+        count++;
+        if (count == 0) {
+          document.getElementById("feed").src = "{{ url_for('video_feed', cam='driveway') }}";
+        } else if (count == 1) {
+          document.getElementById("feed").src = "{{ url_for('video_feed', cam='front_porch') }}";
+        } else if (count == 2) {
+          document.getElementById("feed").src = "{{ url_for('video_feed', cam='sw_yard') }}";
+        } else if (count == 3) {
+          document.getElementById("feed").src = "{{ url_for('video_feed', cam='w_porch') }}";
+        } else if (count == 4) {
+          document.getElementById("feed").src = "{{ url_for('video_feed', cam='n_yard') }}";
+        } else if (count == 5) {
+          document.getElementById("feed").src = "{{ url_for('video_feed', cam='ne_yard') }}";
+          count = -1;
+        }
+      }
+    </script>
+
+    <script>
+      function set_active_cam() {
+        var camera = String(document.getElementById("feed").src)
+        $.post( "/active_cam", {
+          active_cam: camera 
+        });
+      }
+    </script>
+
+    <script>
+      function submitPoll(id){
+        document.getElementById("next").disabled = true;
+        document.getElementById('next').innerHTML = "Loading...";
+        setTimeout(function(){document.getElementById("next").disabled = false;},500);
+        setTimeout(function(){document.getElementById("next").innerHTML = "Next Camera";},500);
+      }
+    </script>
+
+  </head>
+  <body>
+    <div class = "marginauto">
+      <a href="#"><img id="logo" class = "logo" src="https://media.istockphoto.com/vectors/cute-smiling-robot-chat-bot-say-hivector-modern-flat-cartoon-voice-vector-id1073076312?k=6&m=1073076312&s=612x612&w=0&h=bx1_BlqwV32YaMHEw0gvlG7wmwAM00I1t4kSD4FKcck="></a>
+      <h1 class="h1" alt="centered image">SeamNet Surveillance</h1>
+    </div>
+    
+    <img id="feed" style="zoom: 135%;" class="marginauto" src="{{ url_for('video_feed', cam='driveway') }}" alt="centered image">
+
+    <div style="text-align: center;" class = "marginauto">
+      <button id="next" class="button-81" role="button" style="transform: scale(1.5)" onclick="change_camera(); submitPoll();">Next Camera</button>
+    </div>
+
+    <p id="stats" style="color:whitesmoke; text-align: center; font-size: 110%; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;" width="704" height="480" class = "marginauto" alt="centered image"><br></p>
+
+    <script>
+
+      var latest = document.getElementById('stats');
+  
+      var xhr = new XMLHttpRequest();
+      xhr.open('GET', "{{ url_for('stats') }}", true);
+  
+      xhr.onreadystatechange = function() {
+          var all_lines = xhr.responseText.split('\n');
+          last_line = all_lines.length - 2
+          // latest.textContent = all_lines[last_line - 2] + "\n" +  all_lines[last_line - 1] + "\n" + all_lines[last_line]
+          var stats = "<p>" + all_lines[last_line - 4] + "<br><br>" + all_lines[last_line - 3] + "<br><br>" +  all_lines[last_line - 2] + "<br><br>" +  all_lines[last_line - 1] + "<br><br>" + all_lines[last_line]
+          document.getElementById('stats').innerHTML = stats
+  
+          if (xhr.readyState == XMLHttpRequest.DONE) {
+              /*alert("The End of Stream");*/
+              latest.textContent = "Video stream offline :O("
+          }
+      }
+  
+      xhr.send();
+  
+    </script>
+  
+  </body>
+</html>

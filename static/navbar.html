@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
+  <meta http-equiv="Pragma" content="no-cache"/>
+  <meta http-equiv="Expires" content="0"/>
+
+  <link rel="stylesheet" href="styles.css">
+
+  <script src="http://code.jquery.com/jquery-2.1.4.min.js"></script>
+  <script>
+    $(function(){
+        $('a').each(function(){
+            if ($(this).prop('href') == window.location.href) {
+                $(this).addClass('active'); $(this).parents('li').addClass('active');
+            }
+        });
+    });
+</script>
+</head>
+<body>
+  <!-- Header -->
+  <header class="header">
+    <img src="https://media.istockphoto.com/vectors/cute-smiling-robot-chat-bot-say-hivector-modern-flat-cartoon-voice-vector-id1073076312?k=6&m=1073076312&s=612x612&w=0&h=bx1_BlqwV32YaMHEw0gvlG7wmwAM00I1t4kSD4FKcck=" class="logo">
+    <nav>
+      <ul>
+        <li><a href="/" id="home-link">Home</a></li>
+        <li><a href="stats" id="stats-link">Stats</a></li>
+        <li><a href="settings" id="settings-link">Settings</a></li>
+      </ul>
+    </nav>
+  </header>
+
+</body>
+</html>

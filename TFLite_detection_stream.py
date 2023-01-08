@@ -113,7 +113,17 @@ def settings():
     for key in recipients:
         status.append(int(vault.get_value("recipients", key, "active")))
         numbers.append("XXX-XXX-" + vault.get_value("recipients", key, "phone_number")[-4:])
-    return render_template("settings.html", users=recipients, statuses=status, phone_nums=numbers)
+    return render_template("settings.html", users=recipients, statuses=status, phone_nums=numbers, min_conf=min_conf_threshold)
+
+@app.route("/settings/conf-threshold", methods=["PUT"])
+def update_min_conf_threshold():
+    global min_conf_threshold
+
+    data = request.get_json()
+    new_threshold = float(data['new_conf_threshold'])
+    min_conf_threshold = new_threshold
+
+    return jsonify({'success': True}), 200
 
 # MOVE TO APPLICATION MODULE
 @app.route("/stats")

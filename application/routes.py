@@ -1,3 +1,12 @@
+import driver
+import psutil
+import time
+
+from application import app
+from application import TFLite_detection_stream
+from application.services import security as vault, sms_service
+from flask import Response, request, make_response, render_template, jsonify
+
 # -------------------------------------------------------------------------------------------------
 # HOME
 @app.route("/")
@@ -29,7 +38,7 @@ def settings():
     for key in recipients:
         status.append(int(vault.get_value("recipients", key, "active")))
         numbers.append("XXX-XXX-" + vault.get_value("recipients", key, "phone_number")[-4:])
-    return render_template("settings.html", users=recipients, statuses=status, phone_nums=numbers, min_conf=min_conf_threshold)
+    return render_template("settings.html", users=recipients, statuses=status, phone_nums=numbers, min_conf=driver.min_conf_threshold)
 
 @app.route('/users/<string:user>/sms-notifications', methods=["PUT"])
 def update_sms_status(user):
@@ -42,21 +51,19 @@ def update_sms_status(user):
     # Send sms notification of status change
     if sms_status:
         # we are opting in to sms notifications
-        sms_service.send_opt_message(user, True, FEED_URL + "/settings")
+        sms_service.send_opt_message(user, True, driver.FEED_URL + "/settings")
     else:
         # opted out
-        sms_service.send_opt_message(user, False, FEED_URL + "/settings")
+        sms_service.send_opt_message(user, False, driver.FEED_URL + "/settings")
 
     # Return a response to the frontend
     return jsonify({'success': True}), 200
 
 @app.route("/settings/conf-threshold", methods=["PUT"])
 def update_min_conf_threshold():
-    global min_conf_threshold
-
     data = request.get_json()
     new_threshold = float(data['new_conf_threshold'])
-    min_conf_threshold = new_threshold
+    driver.min_conf_threshold = new_threshold
 
     return jsonify({'success': True}), 200
 # -------------------------------------------------------------------------------------------------
@@ -67,7 +74,7 @@ def update_min_conf_threshold():
 def video_feed(cam):
 	# return the response generated along with the specific media
 	# type (mime type)
-    return Response(generate_frame(cam),
+    return Response(TFLite_detection_stream.generate_frame(cam),
 		mimetype = "multipart/x-mixed-replace; boundary=frame")    
 
 # DELETE IF UNUSED
@@ -105,7 +112,7 @@ def get_stats():
             free = round(disk.free/1024.0/1024.0/1024.0,1)
             disk_total = round(disk.total/1024.0/1024.0/1024.0,1)
 
-            time_dif = time.time() - START_TIME
+            time_dif = time.time() - driver.START_TIME
             d = divmod(time_dif, 86400) # days
             h = divmod(d[1],3600)  # hours
             m = divmod(h[1],60)  # minutes

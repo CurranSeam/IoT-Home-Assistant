@@ -101,5 +101,5 @@ def main():
                 data = DISPATCHER.get(env_var).get(key).get(inner_key)
                 __encrypt(env_var, data, True, key, inner_key)
 
-if __name__ == "security":
+if __name__ == "application.services.security":
     main()

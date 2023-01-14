@@ -4,50 +4,71 @@
 # To improve FPS, the webcam object runs in a separate thread from the main program.
 # This script will work with codecs supported by CV2 (e.g. MJPEG, RTSP, ...).
 
-import security as vault
+# import security as vault
 import numpy as np
 
-import os
-import argparse
+# import os
+# import argparse
+# import driver
 import cv2
 import time
 import threading
-import importlib.util
+# import importlib.util
 import datetime
-import sms_service
-import psutil
+# import psutil
+
+from application.services import sms_service
 
 # from flask import Flask, Response, request, make_response, render_template, jsonify
 # from video_stream import VideoStream
 
 # Global variables
-START_TIME = time.time()
 
-MODEL_NAME = ""
-STREAM_URL = ""
-GRAPH_NAME = ""
-LABELMAP_NAME = ""
 min_conf_threshold = 0
 resW, resH = 0, 0
 imW, imH = 0, 0
-use_TPU = False
-IP = ""
-PORT = ""
 FEED_URL = ""
-
 CWD_PATH = ""
-PATH_TO_CKPT = ""
-PATH_TO_LABELS = ""
-
+floating_model = None
 interpreter = None
 input_details = None 
-height = None 
-width = None 
-input_mean = None 
-input_std = None 
-boxes_idx = None 
-classes_idx = None 
-scores_idx = None
+output_details = None
+labels = None
+height = None
+width = None
+input_mean = 0 
+input_std = 0 
+boxes_idx = 0 
+classes_idx = 0
+scores_idx = 0
+
+# START_TIME = time.time()
+
+# MODEL_NAME = ""
+# STREAM_URL = ""
+# GRAPH_NAME = ""
+# LABELMAP_NAME = ""
+# min_conf_threshold = 0
+# resW, resH = 0, 0
+# imW, imH = 0, 0
+# use_TPU = False
+# IP = ""
+# PORT = ""
+# FEED_URL = ""
+
+# CWD_PATH = ""
+# PATH_TO_CKPT = ""
+# PATH_TO_LABELS = ""
+
+# interpreter = None
+# input_details = None 
+# height = None 
+# width = None 
+# input_mean = None 
+# input_std = None 
+# boxes_idx = None 
+# classes_idx = None 
+# scores_idx = None
 
 # initialize a flask object
 # MOVE TO APPLICATION MODULE
@@ -65,11 +86,11 @@ scores_idx = None
 
 CAMERAS = {
     # cam_name : [stream, frame]
-    "Driveway" : [None, None]
-    "Front Porch" : [None, None]
-    "SW Yard" : [None, None]
-    "W Porch" : [None, None]
-    "N Yard" : [None, None]
+    "Driveway" : [None, None],
+    "Front Porch" : [None, None],
+    "SW Yard" : [None, None],
+    "W Porch" : [None, None],
+    "N Yard" : [None, None],
     "NE Yard" : [None, None]
 }
 
@@ -88,6 +109,8 @@ freq = cv2.getTickFrequency()
 def generate_frame(cam):
 	# grab global references to the output frame and lock variables
     global lock
+
+    cam = cam.replace("_", " ")
 
     # loop over frames from the output stream
     while True:
@@ -113,16 +136,19 @@ def generate_frame(cam):
             # the iteration of the loop
             if frame is None:
                 continue
+
             # encode the frame in JPEG format
             (flag, encodedImage) = cv2.imencode(".jpg", frame)
+
             # ensure the frame was successfully encoded
             if not flag:
                 continue
+
         # yield the output frame in the byte format
         yield(b'--frame\r\n' b'Content-Type: image/jpeg\r\n\r\n' + 
             bytearray(encodedImage) + b'\r\n')
 
-def draw_detection_box(labels, boxes, classes):
+def draw_detection_box(i, frame, labels, boxes, classes, scores):
     # Interpreter can return coordinates that are outside of image dimensions, need to force them to be within image using max() and min()
     ymin = int(max(1,(boxes[i][0] * imH)))
     xmin = int(max(1,(boxes[i][1] * imW)))
@@ -141,19 +167,19 @@ def draw_detection_box(labels, boxes, classes):
 
     return object_name
 
-def prepare_notification(object_name, frame):
+def prepare_notification(object_name, frame, idx):
     global message_time
 
     current_time = datetime.datetime.now()
     if object_name == 'person' and current_time >= (message_time + datetime.timedelta(minutes = 5)):
         filepath = CWD_PATH + "/snapshot.jpeg"
         cv2.imwrite(filepath, frame)
-        sms_service.send_message(CAMERAS[idx], current_time, FEED_URL, filepath)
+        sms_service.send_message(list(CAMERAS.keys())[idx], current_time, FEED_URL, filepath)
         message_time = current_time
 
 # Main function for performing detection and notifying users of activity
 def detection():
-    global frame_rate_calc, message_time, freq, FEED_URL, CWD_PATH
+    global frame_rate_calc, message_time, freq, labels, CAMERAS, interpreter, width, height, input_mean, input_std, input_details, output_details, boxes_idx, scores_idx, classes_idx, min_conf_threshold
 
     while True:
 
@@ -168,6 +194,7 @@ def detection():
             pic = CAMERAS.get(stream)[0].read()
             CAMERAS[stream][1] = pic
             frames.append(pic)
+
         # frame2 = FRONT_PORCH.read()
         # frame3 = SW_YARD.read()
         # frame4 = W_PORCH.read()
@@ -175,49 +202,49 @@ def detection():
         # frame6 = NE_YARD.read()
 
         for idx, f in enumerate(frames):
-            # Force only use driveway.
-            if idx > 1:
-                break
+            # Force only use driveway. This can be removed if we
+            # want to add detection on the other cameras.
+            if idx == 0:
 
-            # Acquire frame and resize to expected shape [1xHxWx3]
-            frame = f.copy()
-            frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            frame_resized = cv2.resize(frame_rgb, (width, height))
-            input_data = np.expand_dims(frame_resized, axis=0)
+                # Acquire frame and resize to expected shape [1xHxWx3]
+                frame = f.copy()
+                frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                frame_resized = cv2.resize(frame_rgb, (width, height))
+                input_data = np.expand_dims(frame_resized, axis=0)
 
-            # Normalize pixel values if using a floating model (i.e. if model is non-quantized)
-            if floating_model:
-                input_data = (np.float32(input_data) - input_mean) / input_std
+                # Normalize pixel values if using a floating model (i.e. if model is non-quantized)
+                if floating_model:
+                    input_data = (np.float32(input_data) - input_mean) / input_std
 
-            # Perform the actual detection by running the model with the image as input
-            interpreter.set_tensor(input_details[0]['index'],input_data)
-            interpreter.invoke()
+                # Perform the actual detection by running the model with the image as input
+                interpreter.set_tensor(input_details[0]['index'],input_data)
+                interpreter.invoke()
 
-            # Retrieve detection results
-            boxes = interpreter.get_tensor(output_details[boxes_idx]['index'])[0] # Bounding box coordinates of detected objects
-            classes = interpreter.get_tensor(output_details[classes_idx]['index'])[0] # Class index of detected objects
-            scores = interpreter.get_tensor(output_details[scores_idx]['index'])[0] # Confidence of detected objects
+                # Retrieve detection results
+                boxes = interpreter.get_tensor(output_details[boxes_idx]['index'])[0] # Bounding box coordinates of detected objects
+                classes = interpreter.get_tensor(output_details[classes_idx]['index'])[0] # Class index of detected objects
+                scores = interpreter.get_tensor(output_details[scores_idx]['index'])[0] # Confidence of detected objects
 
-            # Loop over all detections and draw detection box if confidence is above minimum threshold
-            for i in range(len(scores)):
-                if ((scores[i] > min_conf_threshold) and (scores[i] <= 1.0)):
+                # Loop over all detections and draw detection box if confidence is above minimum threshold
+                for i in range(len(scores)):
+                    if ((scores[i] > min_conf_threshold) and (scores[i] <= 1.0)):
 
-                    # Get bounding box coordinates and draw box
-                    object_name = draw_detection_box(labels, boxes, classes)
-                    
-                    # Handle notifications based on detection results
-                    prepare_notification(object_name, frame)
+                        # Get bounding box coordinates and draw box
+                        object_name = draw_detection_box(i, frame, labels, boxes, classes, scores)
 
-            # Draw framerate in corner of frame
-            # cv2.putText(frame,'FPS: {0:.2f}'.format(frame_rate_calc),(30,50),cv2.FONT_HERSHEY_SIMPLEX,1,(255,255,0),2,cv2.LINE_AA)
+                        # Handle notifications based on detection results
+                        prepare_notification(object_name, frame, idx)
 
-            frames[idx] = frame
+                # Draw framerate in corner of frame
+                # cv2.putText(frame,'FPS: {0:.2f}'.format(frame_rate_calc),(30,50),cv2.FONT_HERSHEY_SIMPLEX,1,(255,255,0),2,cv2.LINE_AA)
+
+                frames[idx] = frame
 
         # All the results have been drawn on the frame, so it's time to display it.
         # cv2.imshow('SeamNet', frame) # uncomment for local video display
 
         with lock:
-            for cam, idx in enumerate(CAMERAS.keys()):
+            for idx, cam in enumerate(CAMERAS.keys()):
                 CAMERAS[cam][1] = frames[idx].copy()
             # driveway_frame = frames[0].copy()
             # front_porch_frame = frame2.copy()
@@ -236,3 +263,8 @@ def detection():
             break
 
 # def set_confidence():
+
+if __name__ == '__main__':#'application.TFLite_detection_stream':
+    # generate_frame()
+    # detection()
+    pass

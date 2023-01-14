@@ -1,9 +1,10 @@
 from email.mime.text import MIMEText
 from email.mime.image import MIMEImage
 from email.mime.multipart import MIMEMultipart
+from application.services import security as vault
+
 import smtplib
 import os
-import security as vault
 
 def send_message(camera, timestamp, feed_url, img_filename):
     """

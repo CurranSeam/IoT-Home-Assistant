@@ -11,22 +11,22 @@ from application import TFLite_detection_stream
 from application.services import security as vault
 from application.services.video_stream import VideoStream
 
-START_TIME = time.time()
+# START_TIME = time.time()
 
-min_conf_threshold = 0
-resW, resH = 0, 0
-imW, imH = 0, 0
-FEED_URL = ""
-CWD_PATH = ""
-interpreter = None
-input_details = None 
-HEIGHT = None
-WIDTH = None
-input_mean = 0 
-input_std = 0 
-boxes_idx = 0 
-classes_idx = 0
-scores_idx = 0
+# min_conf_threshold = 0
+# resW, resH = 0, 0
+# imW, imH = 0, 0
+# FEED_URL = ""
+# CWD_PATH = ""
+# interpreter = None
+# input_details = None 
+# HEIGHT = None
+# WIDTH = None
+# input_mean = 0 
+# input_std = 0 
+# boxes_idx = 0 
+# classes_idx = 0
+# scores_idx = 0
 
 if __name__ == "__main__":
     # Define and parse input arguments
@@ -58,11 +58,11 @@ if __name__ == "__main__":
     STREAM_URL = args.streamurl
     GRAPH_NAME = args.graph
     LABELMAP_NAME = args.labels
-    min_conf_threshold = float(args.threshold)
-    resW, resH = args.resolution.split('x')
-    imW, imH = int(resW), int(resH)
+    TFLite_detection_stream.min_conf_threshold = float(args.threshold)
+    TFLite_detection_stream.resW, TFLite_detection_stream.resH = args.resolution.split('x')
+    TFLite_detection_stream.imW, TFLite_detection_stream.imH = int(TFLite_detection_stream.resW), int(TFLite_detection_stream.resH)
     use_TPU = args.edgetpu
-    FEED_URL = str(args.ip) + ":" + str(args.port)
+    TFLite_detection_stream.FEED_URL = str(args.ip) + ":" + str(args.port)
     CHANNELS = args.channels
 
     # Import TensorFlow libraries
@@ -85,54 +85,54 @@ if __name__ == "__main__":
             GRAPH_NAME = 'edgetpu.tflite'       
 
     # Get path to current working directory
-    CWD_PATH = os.getcwd()
+    TFLite_detection_stream.CWD_PATH = os.getcwd()
 
     # Path to .tflite file, which contains the model that is used for object detection
-    PATH_TO_CKPT = os.path.join(CWD_PATH,MODEL_NAME,GRAPH_NAME)
+    PATH_TO_CKPT = os.path.join(TFLite_detection_stream.CWD_PATH,MODEL_NAME,GRAPH_NAME)
 
     # Path to label map file
-    PATH_TO_LABELS = os.path.join(CWD_PATH,MODEL_NAME,LABELMAP_NAME)
+    PATH_TO_LABELS = os.path.join(TFLite_detection_stream.CWD_PATH,MODEL_NAME,LABELMAP_NAME)
 
     # Load the label map
     with open(PATH_TO_LABELS, 'r') as f:
-        labels = [line.strip() for line in f.readlines()]
+        TFLite_detection_stream.labels = [line.strip() for line in f.readlines()]
 
     # Have to do a weird fix for label map if using the COCO "starter model" from
     # https://www.tensorflow.org/lite/models/object_detection/overview
     # First label is '???', which has to be removed.
-    if labels[0] == '???':
-        del(labels[0])
+    if TFLite_detection_stream.labels[0] == '???':
+        del(TFLite_detection_stream.labels[0])
 
     # Load the Tensorflow Lite model.
     # If using Edge TPU, use special load_delegate argument
     if use_TPU:
-        interpreter = Interpreter(model_path=PATH_TO_CKPT,
+        TFLite_detection_stream.interpreter = Interpreter(model_path=PATH_TO_CKPT,
                                 experimental_delegates=[load_delegate('libedgetpu.so.1.0')])
         print(PATH_TO_CKPT)
     else:
-        interpreter = Interpreter(model_path=PATH_TO_CKPT)
+        TFLite_detection_stream.interpreter = Interpreter(model_path=PATH_TO_CKPT)
 
-    interpreter.allocate_tensors()
+    TFLite_detection_stream.interpreter.allocate_tensors()
 
     # Get model details
-    input_details = interpreter.get_input_details()
-    output_details = interpreter.get_output_details()
-    height = input_details[0]['shape'][1]
-    width = input_details[0]['shape'][2]
+    TFLite_detection_stream.input_details = TFLite_detection_stream.interpreter.get_input_details()
+    TFLite_detection_stream.output_details = TFLite_detection_stream.interpreter.get_output_details()
+    TFLite_detection_stream.height = TFLite_detection_stream.input_details[0]['shape'][1]
+    TFLite_detection_stream.width = TFLite_detection_stream.input_details[0]['shape'][2]
 
-    floating_model = (input_details[0]['dtype'] == np.float32)
+    TFLite_detection_stream.floating_model = (TFLite_detection_stream.input_details[0]['dtype'] == np.float32)
 
-    input_mean = 127.5
-    input_std = 127.5
+    TFLite_detection_stream.input_mean = 127.5
+    TFLite_detection_stream.input_std = 127.5
 
     # Check output layer name to determine if this model was created with TF2 or TF1,
     # because outputs are ordered differently for TF2 and TF1 models
-    outname = output_details[0]['name']
+    outname = TFLite_detection_stream.output_details[0]['name']
 
     if ('StatefulPartitionedCall' in outname): # This is a TF2 model
-        boxes_idx, classes_idx, scores_idx = 1, 3, 0
+        TFLite_detection_stream.boxes_idx, TFLite_detection_stream.classes_idx, TFLite_detection_stream.scores_idx = 1, 3, 0
     else: # This is a TF1 model
-        boxes_idx, classes_idx, scores_idx = 0, 1, 2
+        TFLite_detection_stream.boxes_idx, TFLite_detection_stream.classes_idx, TFLite_detection_stream.scores_idx = 0, 1, 2
 
     # Initialize video stream
     # DRIVEWAY = VideoStream(resolution=(imW,imH), framerate=30, stream_url=STREAM_URL).start()
@@ -145,8 +145,9 @@ if __name__ == "__main__":
 
     # Initialize cameras for detection
     for idx, cam_name in enumerate(TFLite_detection_stream.CAMERAS):
+        # print(cam_name)
         channel_str= "channel=" + str(idx + 1)
-        stream = VideoStream(resolution=(imW,imH), framerate=30, stream_url=STREAM_URL.replace("channel=1", channel_str))
+        stream = VideoStream(resolution=(TFLite_detection_stream.imW,TFLite_detection_stream.imH), framerate=30, stream_url=STREAM_URL.replace("channel=1", channel_str))
         TFLite_detection_stream.CAMERAS.update({cam_name:[stream.start(), None]})
 
     # start a thread that will perform motion detection
@@ -157,6 +158,9 @@ if __name__ == "__main__":
     # start the flask app
     app.run(host=args.ip, port=args.port, debug=True,
         threaded=True, use_reloader=False)          
+
+    # TFLite_detection_stream.generate_frame()
+    # TFLite_detection_stream.detection()
 
     # Clean up
     for cam in TFLite_detection_stream.CAMERAS:

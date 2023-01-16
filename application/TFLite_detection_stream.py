@@ -204,48 +204,49 @@ def detection():
         for idx, f in enumerate(frames):
             # Force only use driveway. This can be removed if we
             # want to add detection on the other cameras.
-            if idx == 0:
+            if idx != 0:
+                break
 
-                # Acquire frame and resize to expected shape [1xHxWx3]
-                frame = f.copy()
-                frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                frame_resized = cv2.resize(frame_rgb, (width, height))
-                input_data = np.expand_dims(frame_resized, axis=0)
+            # Acquire frame and resize to expected shape [1xHxWx3]
+            frame = f
+            frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            frame_resized = cv2.resize(frame_rgb, (width, height))
+            input_data = np.expand_dims(frame_resized, axis=0)
 
-                # Normalize pixel values if using a floating model (i.e. if model is non-quantized)
-                if floating_model:
-                    input_data = (np.float32(input_data) - input_mean) / input_std
+            # Normalize pixel values if using a floating model (i.e. if model is non-quantized)
+            if floating_model:
+                input_data = (np.float32(input_data) - input_mean) / input_std
 
-                # Perform the actual detection by running the model with the image as input
-                interpreter.set_tensor(input_details[0]['index'],input_data)
-                interpreter.invoke()
+            # Perform the actual detection by running the model with the image as input
+            interpreter.set_tensor(input_details[0]['index'],input_data)
+            interpreter.invoke()
 
-                # Retrieve detection results
-                boxes = interpreter.get_tensor(output_details[boxes_idx]['index'])[0] # Bounding box coordinates of detected objects
-                classes = interpreter.get_tensor(output_details[classes_idx]['index'])[0] # Class index of detected objects
-                scores = interpreter.get_tensor(output_details[scores_idx]['index'])[0] # Confidence of detected objects
+            # Retrieve detection results
+            boxes = interpreter.get_tensor(output_details[boxes_idx]['index'])[0] # Bounding box coordinates of detected objects
+            classes = interpreter.get_tensor(output_details[classes_idx]['index'])[0] # Class index of detected objects
+            scores = interpreter.get_tensor(output_details[scores_idx]['index'])[0] # Confidence of detected objects
 
-                # Loop over all detections and draw detection box if confidence is above minimum threshold
-                for i in range(len(scores)):
-                    if ((scores[i] > min_conf_threshold) and (scores[i] <= 1.0)):
+            # Loop over all detections and draw detection box if confidence is above minimum threshold
+            for i in range(len(scores)):
+                if ((scores[i] > min_conf_threshold) and (scores[i] <= 1.0)):
 
-                        # Get bounding box coordinates and draw box
-                        object_name = draw_detection_box(i, frame, labels, boxes, classes, scores)
+                    # Get bounding box coordinates and draw box
+                    object_name = draw_detection_box(i, frame, labels, boxes, classes, scores)
 
-                        # Handle notifications based on detection results
-                        prepare_notification(object_name, frame, idx)
+                    # Handle notifications based on detection results
+                    prepare_notification(object_name, frame, idx)
 
-                # Draw framerate in corner of frame
-                # cv2.putText(frame,'FPS: {0:.2f}'.format(frame_rate_calc),(30,50),cv2.FONT_HERSHEY_SIMPLEX,1,(255,255,0),2,cv2.LINE_AA)
+            # Draw framerate in corner of frame
+            # cv2.putText(frame,'FPS: {0:.2f}'.format(frame_rate_calc),(30,50),cv2.FONT_HERSHEY_SIMPLEX,1,(255,255,0),2,cv2.LINE_AA)
 
-                frames[idx] = frame
+            frames[idx] = frame
 
         # All the results have been drawn on the frame, so it's time to display it.
         # cv2.imshow('SeamNet', frame) # uncomment for local video display
 
         with lock:
             for idx, cam in enumerate(CAMERAS.keys()):
-                CAMERAS[cam][1] = frames[idx].copy()
+                CAMERAS.get(cam)[1] = frames[idx].copy()
             # driveway_frame = frames[0].copy()
             # front_porch_frame = frame2.copy()
             # sw_yard_frame = frame3.copy()

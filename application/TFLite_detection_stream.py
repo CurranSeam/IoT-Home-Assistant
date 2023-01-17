@@ -192,7 +192,7 @@ def detection():
         # frame1 = DRIVEWAY.read()
         for stream in CAMERAS.keys():
             pic = CAMERAS.get(stream)[0].read()
-            CAMERAS[stream][1] = pic
+            # CAMERAS.get(stream)[1] = pic
             frames.append(pic)
 
         # frame2 = FRONT_PORCH.read()
@@ -204,7 +204,7 @@ def detection():
         for idx, f in enumerate(frames):
             # Force only use driveway. This can be removed if we
             # want to add detection on the other cameras.
-            if idx != 0:
+            if idx > 0:
                 break
 
             # Acquire frame and resize to expected shape [1xHxWx3]
@@ -239,14 +239,14 @@ def detection():
             # Draw framerate in corner of frame
             # cv2.putText(frame,'FPS: {0:.2f}'.format(frame_rate_calc),(30,50),cv2.FONT_HERSHEY_SIMPLEX,1,(255,255,0),2,cv2.LINE_AA)
 
-            frames[idx] = frame
+            # frames[idx] = frame
 
         # All the results have been drawn on the frame, so it's time to display it.
         # cv2.imshow('SeamNet', frame) # uncomment for local video display
 
         with lock:
             for idx, cam in enumerate(CAMERAS.keys()):
-                CAMERAS.get(cam)[1] = frames[idx].copy()
+                CAMERAS.get(cam)[1] = frames[idx]
             # driveway_frame = frames[0].copy()
             # front_porch_frame = frame2.copy()
             # sw_yard_frame = frame3.copy()

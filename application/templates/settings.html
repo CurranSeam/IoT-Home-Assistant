@@ -59,6 +59,28 @@
       <div id="tableContainer-2">
         <table class="user-table" style="margin-top: 50px; width: 80%; height: auto">
           <tr>
+            <th>App Settings</th>
+            <th></th>
+          </tr>
+          <tbody>
+            <tr>
+              <td>Message Cool-Off<br>(Delay between consecutive messages)</td>
+              <td>
+                <label for="message_cooloff">(seconds): &emsp;</label>
+                <input type="range" id="message_cooloff" name="message_cooloff" class="slider" min="30" max="300" step="30" value="{{ message_cooloff }}" style="width: 80px;">
+                &emsp;<b id="cooloff_text">{{ message_cooloff }}</b>
+                <button id="update" class="button-81" role="button" style="margin-left: 20px;" onclick="updateMessageCooloff()">Update</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="tableContainer-1">
+      <div id="tableContainer-2">
+        <table class="user-table" style="margin-top: 50px; width: 80%; height: auto">
+          <tr>
             <th>Advanced Settings</th>
             <th></th>
           </tr>
@@ -66,15 +88,20 @@
             <tr>
               <td>Minimum Confidence Threshold<br>(lowest confidence for detection results)</td>
               <td>
-                <label for="conf_threshold">(0.1 - 0.9): &emsp;</label>
-                <input type="number" id="conf_threshold" name="conf_threshold" class="numberbox" min="0.1" max="0.9" step="0.1" value="{{ min_conf }}">
-                <button id="update" class="button-81" role="button" style="margin-left: 30px;" onclick="updateMinConfidenceThreshold()">Update</button>
+                <label for="conf_threshold">(percentage): &emsp;</label>
+                <input type="range" id="conf_threshold" name="conf_threshold" class="slider" min="0.1" max="0.9" step="0.1" value="{{ min_conf }}" style="width: 80px;">
+                &emsp;<b id="conf_text">{{ min_conf }}</b>
+                <button id="update" class="button-81" role="button" style="margin-left: 20px;" onclick="updateMinConfidenceThreshold()">Update</button>
               </td>
             </tr>
           </tbody>
         </table>
       </div>
     </div>
+
+    <br>
+    <br>
+    <br>
 
     <div id="snackbar">Update successful :O)</div>
 
@@ -100,14 +127,32 @@
           // Handle any errors
         });
       }
-    </script>
 
-    <script>
+      function updateMessageCooloff() {
+        // Get the user ID from the "data-user-id" attribute
+        var value = document.getElementById("message_cooloff").value
+
+        // Send an HTTP PUT request to the backend to update the user's SMS notifications
+        fetch('/settings/message-cooloff', {
+          method: 'PUT',
+          body: JSON.stringify({
+            new_cooloff: value
+          }),
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        })
+        .then(function(response) {
+          updateSnackbar("Message cooloff updated :O)")
+        })
+        .catch(function(error) {
+          // Handle any errors
+        });
+      }
+
       function updateMinConfidenceThreshold() {
         // Get the user ID from the "data-user-id" attribute
         var value = document.getElementById("conf_threshold").value
-
-        console.log(value)
 
         // Send an HTTP PUT request to the backend to update the user's SMS notifications
         fetch('/settings/conf-threshold', {
@@ -126,9 +171,7 @@
           // Handle any errors
         });
       }
-    </script>
 
-    <script>
       function updateSnackbar(message) {
         var x = document.getElementById("snackbar");
         x.innerHTML = message
@@ -138,6 +181,24 @@
 
         // After 3 seconds, remove the show class from DIV
         setTimeout(function(){ x.className = x.className.replace("show", ""); }, 3000);
+      }
+    </script>
+    
+    <script>
+      var cooloffSlider = document.getElementById("message_cooloff");
+      var cooloffText = document.getElementById("cooloff_text");
+      cooloffText.innerHTML = cooloffSlider.value;
+        
+      cooloffSlider.oninput = function() {
+        cooloffText.innerHTML = this.value;
+      }
+
+      var confSlider = document.getElementById("conf_threshold");
+      var confText = document.getElementById("conf_text");
+      confText.innerHTML = confSlider.value;
+        
+      confSlider.oninput = function() {
+        confText.innerHTML = this.value;
       }
     </script>
   </body>

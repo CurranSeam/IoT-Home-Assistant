@@ -1,6 +1,7 @@
 # import driver
 import psutil
 import time
+import datetime
 
 from application import app
 from application import TFLite_detection_stream
@@ -40,7 +41,9 @@ def settings():
     for key in recipients:
         status.append(int(vault.get_value("recipients", key, "active")))
         numbers.append("XXX-XXX-" + vault.get_value("recipients", key, "phone_number")[-4:])
-    return render_template("settings.html", users=recipients, statuses=status, phone_nums=numbers, min_conf=TFLite_detection_stream.min_conf_threshold)
+
+    cooloff = TFLite_detection_stream.message_cooloff.total_seconds()
+    return render_template("settings.html", users=recipients, statuses=status, phone_nums=numbers, min_conf=TFLite_detection_stream.min_conf_threshold, message_cooloff=cooloff)
 
 @app.route('/users/<string:user>/sms-notifications', methods=["PUT"])
 def update_sms_status(user):
@@ -66,6 +69,15 @@ def update_min_conf_threshold():
     data = request.get_json()
     new_threshold = float(data['new_conf_threshold'])
     TFLite_detection_stream.min_conf_threshold = new_threshold
+
+    return jsonify({'success': True}), 200
+
+@app.route("/settings/message-cooloff", methods=["PUT"])
+def update_message_cooloff():
+    data = request.get_json()
+    cooloff_seconds = int(data['new_cooloff'])
+    new_cooloff = datetime.timedelta(seconds=cooloff_seconds)
+    TFLite_detection_stream.message_cooloff = new_cooloff
 
     return jsonify({'success': True}), 200
 # -------------------------------------------------------------------------------------------------

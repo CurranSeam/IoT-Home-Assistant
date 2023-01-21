@@ -13,17 +13,17 @@
     function change_camera() {
       count++;
       if (count == 0) {
-        document.getElementById("feed").src = "{{ url_for('video_feed', cam='driveway') }}";
+        document.getElementById("feed").src = "{{ url_for('video_feed', cam='Driveway') }}";
       } else if (count == 1) {
-        document.getElementById("feed").src = "{{ url_for('video_feed', cam='front_porch') }}";
+        document.getElementById("feed").src = "{{ url_for('video_feed', cam='Front_Porch') }}";
       } else if (count == 2) {
-        document.getElementById("feed").src = "{{ url_for('video_feed', cam='sw_yard') }}";
+        document.getElementById("feed").src = "{{ url_for('video_feed', cam='SW_Yard') }}";
       } else if (count == 3) {
-        document.getElementById("feed").src = "{{ url_for('video_feed', cam='w_porch') }}";
+        document.getElementById("feed").src = "{{ url_for('video_feed', cam='W_Porch') }}";
       } else if (count == 4) {
-        document.getElementById("feed").src = "{{ url_for('video_feed', cam='n_yard') }}";
+        document.getElementById("feed").src = "{{ url_for('video_feed', cam='N_Yard') }}";
       } else if (count == 5) {
-        document.getElementById("feed").src = "{{ url_for('video_feed', cam='ne_yard') }}";
+        document.getElementById("feed").src = "{{ url_for('video_feed', cam='NE_Yard') }}";
         count = -1;
       }
     }
@@ -65,7 +65,7 @@
   </div>
 
   <div>
-    <img id="feed" style="zoom: 135%;" src="{{ url_for('video_feed', cam='driveway') }}" class = "marginauto" alt="centered image">
+    <img id="feed" style="zoom: 135%;" src="{{ url_for('video_feed', cam='Driveway') }}" class = "marginauto" alt="centered image">
   </div>
 
   <div style="text-align: center;" class = "marginauto">

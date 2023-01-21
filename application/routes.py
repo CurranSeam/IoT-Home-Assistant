@@ -1,4 +1,3 @@
-# import driver
 import psutil
 import time
 import datetime
@@ -21,7 +20,6 @@ def index():
     except:
         return make_response('Could not verify!', 401, {'WWW-Authenticate' : 'Basic realm="Login Required"'})
     return render_template("index.html")
-# -------------------------------------------------------------------------------------------------
 
 # -------------------------------------------------------------------------------------------------
 # SETTINGS
@@ -80,7 +78,6 @@ def update_message_cooloff():
     TFLite_detection_stream.message_cooloff = new_cooloff
 
     return jsonify({'success': True}), 200
-# -------------------------------------------------------------------------------------------------
 
 # -------------------------------------------------------------------------------------------------
 # DETECTION
@@ -99,7 +96,6 @@ def video_feed(cam):
 #     active_cam = cam.split("/")[-2]
     
 #     return cam
-# -------------------------------------------------------------------------------------------------
 
 # -------------------------------------------------------------------------------------------------
 # STATS

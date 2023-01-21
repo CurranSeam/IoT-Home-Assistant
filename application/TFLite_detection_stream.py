@@ -4,26 +4,14 @@
 # To improve FPS, the webcam object runs in a separate thread from the main program.
 # This script will work with codecs supported by CV2 (e.g. MJPEG, RTSP, ...).
 
-# import security as vault
 import numpy as np
-
-# import os
-# import argparse
-# import driver
 import cv2
-import time
 import threading
-# import importlib.util
 import datetime
-# import psutil
 
 from application.services import sms_service
 
-# from flask import Flask, Response, request, make_response, render_template, jsonify
-# from video_stream import VideoStream
-
 # Global variables
-
 min_conf_threshold = 0
 resW, resH = 0, 0
 imW, imH = 0, 0
@@ -42,48 +30,6 @@ boxes_idx = 0
 classes_idx = 0
 scores_idx = 0
 
-# START_TIME = time.time()
-
-# MODEL_NAME = ""
-# STREAM_URL = ""
-# GRAPH_NAME = ""
-# LABELMAP_NAME = ""
-# min_conf_threshold = 0
-# resW, resH = 0, 0
-# imW, imH = 0, 0
-# use_TPU = False
-# IP = ""
-# PORT = ""
-# FEED_URL = ""
-
-# CWD_PATH = ""
-# PATH_TO_CKPT = ""
-# PATH_TO_LABELS = ""
-
-# interpreter = None
-# input_details = None 
-# height = None 
-# width = None 
-# input_mean = None 
-# input_std = None 
-# boxes_idx = None 
-# classes_idx = None 
-# scores_idx = None
-
-# initialize a flask object
-# MOVE TO APPLICATION MODULE
-# app = Flask(__name__)    
-
-# initialize the output frame and a lock used to ensure thread-safe
-# exchanges of the output frames (useful when multiple browsers/tabs
-# are viewing the stream)
-# driveway_frame = None
-# front_porch_frame = None
-# sw_yard_frame = None
-# w_porch_frame = None
-# n_yard_frame = None
-# ne_yard_frame = None
-
 CAMERAS = {
     # cam_name : [stream, frame]
     "Driveway" : [None, None],
@@ -95,9 +41,6 @@ CAMERAS = {
 }
 
 lock = threading.Lock()
-
-# IP camera names
-# CAMERAS = ["Driveway", "Front Porch", "SW Yard", "W Porch", "N Yard", "NE Yard"]
 
 # Timestamp of a sent notification message
 message_time = datetime.datetime(1900, 1, 1)
@@ -117,21 +60,7 @@ def generate_frame(cam):
 
     # loop over frames from the output stream
     while True:
-        # frame = None
-    
         frame = CAMERAS.get(cam)[1]
-        # if (cam == "driveway"):
-        #     frame = driveway_frame
-        # if (cam == "front_porch"):
-        #     frame = front_porch_frame
-        # if (cam == "sw_yard"):
-        #     frame = sw_yard_frame
-        # if (cam == "w_porch"):
-        #     frame = w_porch_frame
-        # if (cam == "n_yard"):
-        #     frame = n_yard_frame
-        # if (cam == "ne_yard"):
-        #     frame = ne_yard_frame
 
         # wait until the lock is acquired
         with lock:
@@ -192,22 +121,14 @@ def detection():
         frames = [] # frames (of any cam) to run detection on
 
         # Grab frame from video stream
-        # frame1 = DRIVEWAY.read()
         for stream in CAMERAS.keys():
             pic = CAMERAS.get(stream)[0].read()
-            # CAMERAS.get(stream)[1] = pic
             frames.append(pic)
-
-        # frame2 = FRONT_PORCH.read()
-        # frame3 = SW_YARD.read()
-        # frame4 = W_PORCH.read()
-        # frame5 = N_YARD.read()
-        # frame6 = NE_YARD.read()
 
         for idx, f in enumerate(frames):
             # Force only use driveway. This can be removed if we
             # want to add detection on the other cameras.
-            if idx > 2:
+            if idx > 0:
                 break
 
             # Acquire frame and resize to expected shape [1xHxWx3]
@@ -242,20 +163,12 @@ def detection():
             # Draw framerate in corner of frame
             # cv2.putText(frame,'FPS: {0:.2f}'.format(frame_rate_calc),(30,50),cv2.FONT_HERSHEY_SIMPLEX,1,(255,255,0),2,cv2.LINE_AA)
 
-            # frames[idx] = frame
-
         # All the results have been drawn on the frame, so it's time to display it.
         # cv2.imshow('SeamNet', frame) # uncomment for local video display
 
         with lock:
             for idx, cam in enumerate(CAMERAS.keys()):
                 CAMERAS.get(cam)[1] = frames[idx]
-            # driveway_frame = frames[0].copy()
-            # front_porch_frame = frame2.copy()
-            # sw_yard_frame = frame3.copy()
-            # w_porch_frame = frame4.copy()
-            # n_yard_frame = frame5.copy()
-            # ne_yard_frame = frame6.copy()
 
         # Calculate framerate
         t2 = cv2.getTickCount()
@@ -266,9 +179,5 @@ def detection():
         if cv2.waitKey(1) == ord('q'):
             break
 
-# def set_confidence():
-
-if __name__ == '__main__':#'application.TFLite_detection_stream':
-    # generate_frame()
-    # detection()
+if __name__ == '__main__':
     pass

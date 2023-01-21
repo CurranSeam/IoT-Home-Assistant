@@ -11,23 +11,6 @@ from application import TFLite_detection_stream
 from application.services import security as vault
 from application.services.video_stream import VideoStream
 
-# START_TIME = time.time()
-
-# min_conf_threshold = 0
-# resW, resH = 0, 0
-# imW, imH = 0, 0
-# FEED_URL = ""
-# CWD_PATH = ""
-# interpreter = None
-# input_details = None 
-# HEIGHT = None
-# WIDTH = None
-# input_mean = 0 
-# input_std = 0 
-# boxes_idx = 0 
-# classes_idx = 0
-# scores_idx = 0
-
 if __name__ == "__main__":
     # Define and parse input arguments
     parser = argparse.ArgumentParser()
@@ -134,15 +117,6 @@ if __name__ == "__main__":
     else: # This is a TF1 model
         TFLite_detection_stream.boxes_idx, TFLite_detection_stream.classes_idx, TFLite_detection_stream.scores_idx = 0, 1, 2
 
-    # Initialize video stream
-    # DRIVEWAY = VideoStream(resolution=(imW,imH), framerate=30, stream_url=STREAM_URL).start()
-    # FRONT_PORCH = VideoStream(resolution=(imW,imH), framerate=30, stream_url=STREAM_URL.replace("channel=1", "channel=2")).start()
-    # SW_YARD = VideoStream(resolution=(imW,imH), framerate=30, stream_url=STREAM_URL.replace("channel=1", "channel=3")).start()
-    # W_PORCH = VideoStream(resolution=(imW,imH), framerate=30, stream_url=STREAM_URL.replace("channel=1", "channel=4")).start()
-    # N_YARD = VideoStream(resolution=(imW,imH), framerate=30, stream_url=STREAM_URL.replace("channel=1", "channel=5")).start()
-    # NE_YARD = VideoStream(resolution=(imW,imH), framerate=30, stream_url=STREAM_URL.replace("channel=1", "channel=6")).start()
-    # time.sleep(1)
-
     # Initialize cameras for detection
     for idx, cam_name in enumerate(TFLite_detection_stream.CAMERAS):
         # print(cam_name)
@@ -159,18 +133,6 @@ if __name__ == "__main__":
     app.run(host=args.ip, port=args.port, debug=True,
         threaded=True, use_reloader=False)          
 
-    # TFLite_detection_stream.generate_frame()
-    # TFLite_detection_stream.detection()
-
     # Clean up
     for cam in TFLite_detection_stream.CAMERAS:
         TFLite_detection_stream.CAMERAS.get(cam)[0].stop()
-    # DRIVEWAY.stop()
-    # FRONT_PORCH.stop()
-    # SW_YARD.stop()
-    # W_PORCH.stop()
-    # N_YARD.stop()
-    # NE_YARD.stop()
-
-
-# def set_vault_state():

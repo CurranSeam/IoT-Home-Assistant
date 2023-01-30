@@ -141,7 +141,7 @@ input.checkbox {
   height: 35px;
   width: 35px;
 }
-input.numberbox {
+input.slider {
   transform: scale(1.6)
 }
 

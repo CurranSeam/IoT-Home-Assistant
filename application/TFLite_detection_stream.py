@@ -6,7 +6,6 @@
 
 import numpy as np
 import cv2
-import time
 import threading
 import datetime
 
@@ -43,8 +42,11 @@ CAMERAS = {
 
 lock = threading.Lock()
 
-# Used for cooloff time between sending consecutive notification messages
+# Timestamp of a sent notification message
 message_time = datetime.datetime(1900, 1, 1)
+
+# Time-delta of the transmission of consecutive notification messages
+message_cooloff = datetime.timedelta(seconds=60)
 
 # Initialize frame rate calculation
 frame_rate_calc = 1
@@ -98,10 +100,10 @@ def draw_detection_box(i, frame, labels, boxes, classes, scores):
     return object_name
 
 def prepare_notification(object_name, frame, idx):
-    global message_time
+    global message_time, message_cooloff
 
     current_time = datetime.datetime.now()
-    if object_name == 'person' and current_time >= (message_time + datetime.timedelta(minutes = 5)):
+    if object_name == 'person' and current_time >= (message_time + message_cooloff):
         filepath = CWD_PATH + "/snapshot.jpeg"
         cv2.imwrite(filepath, frame)
         sms_service.send_message(list(CAMERAS.keys())[idx], current_time, FEED_URL, filepath)

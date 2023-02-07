@@ -2,6 +2,7 @@ from email.mime.text import MIMEText
 from email.mime.image import MIMEImage
 from email.mime.multipart import MIMEMultipart
 from application.services import security as vault
+from application.services import common
 
 import smtplib
 import os
@@ -10,11 +11,7 @@ def send_message(camera, timestamp, feed_url, img_filename):
     """
     Sends an SMS message via a carrier through SMTP. 
     """
-    timestamp = timestamp.replace(microsecond=0) # Remove milliseconds for readability
-    title = str("SeamNet Alert").center(32)
-    text = """\
-    %s\n\nPerson detected on %s\n\nat %s\n\nView live feed below:\n%s\n\n(v  '  -- ' )>︻╦╤─ - - - 
-    """%(title, camera, str(timestamp), str(feed_url))
+    text = common.get_detection_message(camera, timestamp, feed_url);
 
     msg = MIMEMultipart()
     msg.attach(MIMEText(text))
@@ -66,13 +63,7 @@ def setup_smtp_server():
     return server, auth[0]
 
 def get_active_numbers():
-    people = []
-
-    # Add active phone numbers
-    for name in vault.get_keys("recipients"):
-        active = int(vault.get_value("recipients", name, "active"))
-        if active: 
-            people.append(vault.get_value("recipients", name, "phone_number")) 
+    people = common.get_active_users_value("phone_number")
 
     # This needs to be changed with https://trello.com/c/MhK6UZ1M
     # Returns list of SMS recipients ["phone_no" + "carrier_addr" ... n]

@@ -9,6 +9,7 @@ import cv2
 import threading
 import datetime
 
+from application.services import telegram
 from application.services import sms_service
 
 # Global variables
@@ -46,14 +47,14 @@ lock = threading.Lock()
 message_time = datetime.datetime(1900, 1, 1)
 
 # Time-delta of the transmission of consecutive notification messages
-message_cooloff = datetime.timedelta(seconds=60)
+message_cooloff = datetime.timedelta(seconds=15)
 
 # Initialize frame rate calculation
 frame_rate_calc = 1
 freq = cv2.getTickFrequency()
 
 def generate_frame(cam):
-	# grab global references to the output frame and lock variables
+	# grab global reference the lock
     global lock
 
     cam = cam.replace("_", " ")
@@ -106,7 +107,7 @@ def prepare_notification(object_name, frame, idx):
     if object_name == 'person' and current_time >= (message_time + message_cooloff):
         filepath = CWD_PATH + "/snapshot.jpeg"
         cv2.imwrite(filepath, frame)
-        sms_service.send_message(list(CAMERAS.keys())[idx], current_time, FEED_URL, filepath)
+        telegram.send_detection_message(list(CAMERAS.keys())[idx], current_time, FEED_URL, filepath)
         message_time = current_time
 
 # Main function for performing detection and notifying users of activity

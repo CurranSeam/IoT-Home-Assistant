@@ -4,11 +4,22 @@ import importlib.util
 import os
 import numpy as np
 import threading
+import logging
 
 from application import app
 from application import TFLite_detection_stream
 from application.services import security as vault
+from application.services import telegram
 from application.services.video_stream import VideoStream
+
+class FlaskThread(threading.Thread):
+    def __init__(self, args):
+        super(FlaskThread, self).__init__()
+        self.args = args
+
+    def run(self):
+        logging.info("Starting flask server...")
+        app.run(host=self.args.ip, port=self.args.port, threaded=True, use_reloader=False)
 
 if __name__ == "__main__":
     # Define and parse input arguments
@@ -129,9 +140,13 @@ if __name__ == "__main__":
     t.start()
 
     # start the flask app
-    app.run(host=args.ip, port=args.port, debug=True,
-        threaded=True, use_reloader=False)          
+    flask_thread = FlaskThread(args)
+    flask_thread.start()
+
+    # start services
+    telegram.start_bot()
 
     # Clean up
     for cam in TFLite_detection_stream.CAMERAS:
         TFLite_detection_stream.CAMERAS.get(cam)[0].stop()
+        logging.info(f'stopped cam stream: {cam}')

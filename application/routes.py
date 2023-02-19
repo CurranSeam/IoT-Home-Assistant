@@ -31,17 +31,34 @@ def zip_lists(a, b, c):
 # Register the custom filter with Jinja
 app.jinja_env.filters['zip'] = zip_lists
 
+# Define the custom Jinja filter
+@app.template_filter()
+def zip_lists_detection(a, b):
+    return zip(a, b)
+
+# Register the custom filter with Jinja
+app.jinja_env.filters['zip_detection'] = zip_lists_detection
+
 @app.route("/settings")
 def settings():
     status = []
-    recipients = vault.get_keys("recipients")
     numbers = []
+    cameras_status = []
+
+    recipients = vault.get_keys("recipients")
+    cameras = TFLite_detection_stream.CAMERAS.keys()
+
     for key in recipients:
         status.append(int(vault.get_value("recipients", key, "active")))
         numbers.append("XXX-XXX-" + vault.get_value("recipients", key, "phone_number")[-4:])
 
+    for key in cameras:
+        cameras_status.append(TFLite_detection_stream.CAMERAS.get(key)[2])
+
     cooloff = TFLite_detection_stream.message_cooloff.total_seconds()
-    return render_template("settings.html", users=recipients, statuses=status, phone_nums=numbers, min_conf=TFLite_detection_stream.min_conf_threshold, message_cooloff=cooloff)
+    return render_template("settings.html", users=recipients, statuses=status,
+                            phone_nums=numbers, min_conf=TFLite_detection_stream.min_conf_threshold,
+                            message_cooloff=cooloff, cams=cameras, cam_statuses=cameras_status)
 
 @app.route('/users/<string:user>/sms-notifications', methods=["PUT"])
 def update_sms_status(user):
@@ -76,6 +93,14 @@ def update_message_cooloff():
     cooloff_seconds = int(data['new_cooloff'])
     new_cooloff = datetime.timedelta(seconds=cooloff_seconds)
     TFLite_detection_stream.message_cooloff = new_cooloff
+
+    return jsonify({'success': True}), 200
+
+@app.route("/settings/<string:cam>/update-detection", methods=["PUT"])
+def update_cam_detection_status(cam):
+    data = request.get_json()
+    new_state = int(data['detection_state'])
+    TFLite_detection_stream.CAMERAS.get(cam)[2] = new_state
 
     return jsonify({'success': True}), 200
 

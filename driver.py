@@ -121,7 +121,7 @@ if __name__ == "__main__":
         # print(cam_name)
         channel_str= "channel=" + str(idx + 1)
         stream = VideoStream(resolution=(TFLite_detection_stream.imW,TFLite_detection_stream.imH), framerate=30, stream_url=STREAM_URL.replace("channel=1", channel_str))
-        TFLite_detection_stream.CAMERAS.update({cam_name:[stream.start(), None]})
+        TFLite_detection_stream.CAMERAS.update({cam_name:[stream.start(), None, 0]})
 
     # start a thread that will perform motion detection
     t = threading.Thread(target=TFLite_detection_stream.detection)

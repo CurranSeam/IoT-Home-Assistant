@@ -31,13 +31,13 @@ classes_idx = 0
 scores_idx = 0
 
 CAMERAS = {
-    # cam_name : [stream, frame]
-    "Driveway" : [None, None],
-    "Front Porch" : [None, None],
-    "SW Yard" : [None, None],
-    "W Porch" : [None, None],
-    "N Yard" : [None, None],
-    "NE Yard" : [None, None]
+    # cam_name : [stream, frame, active]
+    "Driveway" : [None, None, 0],
+    "Front Porch" : [None, None, 0],
+    "SW Yard" : [None, None, 0],
+    "W Porch" : [None, None, 0],
+    "N Yard" : [None, None, 0],
+    "NE Yard" : [None, None, 0]
 }
 
 lock = threading.Lock()
@@ -119,6 +119,7 @@ def detection():
         t1 = cv2.getTickCount()
 
         frames = [] # frames (of any cam) to run detection on
+        keys = list(CAMERAS.keys())
 
         # Grab frame from video stream
         for stream in CAMERAS.keys():
@@ -128,8 +129,10 @@ def detection():
         for idx, f in enumerate(frames):
             # Force only use driveway. This can be removed if we
             # want to add detection on the other cameras.
-            if idx > 0:
-                break
+
+            # Only do detection on selected cameras.
+            if not CAMERAS.get(keys[idx])[2]:
+                continue
 
             # Acquire frame and resize to expected shape [1xHxWx3]
             frame = f

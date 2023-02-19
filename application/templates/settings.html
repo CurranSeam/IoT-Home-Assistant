@@ -86,12 +86,37 @@
           </tr>
           <tbody>
             <tr>
-              <td>Minimum Confidence Threshold<br>(lowest confidence for detection results)</td>
+              <td>Minimum Confidence Threshold<br>(Lowest confidence for detection results)</td>
               <td>
                 <label for="conf_threshold">(percentage): &emsp;</label>
                 <input type="range" id="conf_threshold" name="conf_threshold" class="slider" min="0.1" max="0.9" step="0.1" value="{{ min_conf }}" style="width: 80px;">
                 &emsp;<b id="conf_text">{{ min_conf }}</b>
                 <button id="update" class="button-81" role="button" style="margin-left: 20px;" onclick="updateMinConfidenceThreshold()">Update</button>
+              </td>
+            </tr>
+            <tr>
+              <td style="vertical-align:top;">Enable/Disable Detection<br>(Select cameras to run detection on)</td>
+              <td>
+                <div id="tableContainer-1">
+                  <div id="tableContainer-2">
+                    <table class="user-table" id=tableContainer-1-small>
+                      <!-- <tr>
+                        <th>Camera</th>
+                        <th>Enable/Disable</th>
+                      </tr> -->
+                      <tbody>
+                        {% for cam_name, enabled in cams|zip_detection(cam_statuses) %}
+                          <tr>
+                            <td>{{ cam_name }}</td>
+                            <td>
+                              <input type="checkbox" class="checkbox" detect_status="{{ cam_name }}" {% if enabled %}checked{% endif %} onclick="updateCamDetection(this)">
+                            </td>
+                          </tr>
+                        {% endfor %}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
               </td>
             </tr>
           </tbody>
@@ -122,6 +147,28 @@
         })
         .then(function(response) {
           updateSnackbar("SMS notifications updated :O)")
+        })
+        .catch(function(error) {
+          // Handle any errors
+        });
+      }
+
+      function updateCamDetection(checkbox) {
+        // Get the user ID from the "data-user-id" attribute
+        var cam = checkbox.getAttribute('detect_status');
+
+        // Send an HTTP PUT request to the backend to update the user's SMS notifications
+        fetch('/settings/' + cam + '/update-detection', {
+          method: 'PUT',
+          body: JSON.stringify({
+            detection_state: checkbox.checked
+          }),
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        })
+        .then(function(response) {
+          updateSnackbar("Camera detection updated :O)")
         })
         .catch(function(error) {
           // Handle any errors

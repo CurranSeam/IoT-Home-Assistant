@@ -118,6 +118,11 @@ h1 {
   display: table-cell;
   height: 100%;
 }
+#tableContainer-1-small {
+  height: 100%;
+  width: 20%;
+  display: table;
+}
 .user-table {
   margin: 0 auto; /* center the table */
   border-collapse: collapse; /* remove the cell borders */

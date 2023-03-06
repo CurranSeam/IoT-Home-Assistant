@@ -10,7 +10,6 @@ import threading
 import datetime
 
 from application.services import telegram
-from application.services import sms_service
 
 # Global variables
 min_conf_threshold = 0

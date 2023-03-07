@@ -47,10 +47,10 @@ def send_detection_message(camera, timestamp, feed_url, img_filename):
         response = request("post", "sendPhoto", params, file)
 
         if not response.ok:
-            logging.error(f"Telegram ERROR: {response}")
-
             # Send SMS as a fallback option in case of an error.
             sms_service.send_message(camera, timestamp, feed_url, img_filename)
+
+            raise requests.HTTPError(response=response)
 
 def request(method, endpoint, params, files):
     """

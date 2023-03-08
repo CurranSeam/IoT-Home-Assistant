@@ -8,7 +8,8 @@ DISPATCHER = {
     "CAMERAS" : env.CAMERAS,
     "RECIPIENTS" : env.RECIPIENTS,
     "CREDENTIALS" : env.CREDENTIALS,
-    "CARRIERS" : env.CARRIERS
+    "CARRIERS" : env.CARRIERS,
+    "EXTERNAL_API" : env.EXTERNAL_API
 }
 
 def authenticate(username, password):

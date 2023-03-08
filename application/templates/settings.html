@@ -67,7 +67,7 @@
               <td>Message Cool-Off<br>(Delay between consecutive messages)</td>
               <td>
                 <label for="message_cooloff">(seconds): &emsp;</label>
-                <input type="range" id="message_cooloff" name="message_cooloff" class="slider" min="30" max="300" step="30" value="{{ message_cooloff }}" style="width: 80px;">
+                <input type="range" id="message_cooloff" name="message_cooloff" class="slider" min="15" max="180" step="15" value="{{ message_cooloff }}" style="width: 80px;">
                 &emsp;<b id="cooloff_text">{{ message_cooloff }}</b>
                 <button id="update" class="button-81" role="button" style="margin-left: 20px;" onclick="updateMessageCooloff()">Update</button>
               </td>

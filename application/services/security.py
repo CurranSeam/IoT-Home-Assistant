@@ -5,6 +5,7 @@ import env
 # We should be importing Fernet to be used here, not through the env file
 
 DISPATCHER = {
+    "APP" : env.APP,
     "CAMERAS" : env.CAMERAS,
     "RECIPIENTS" : env.RECIPIENTS,
     "CREDENTIALS" : env.CREDENTIALS,

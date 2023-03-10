@@ -1,5 +1,6 @@
 import requests
 import logging
+import socket
 
 from telegram import Update
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, filters
@@ -13,13 +14,28 @@ logging.basicConfig(
     level=logging.INFO
 )
 
-API_URL = "https://api.telegram.org/bot"
-
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    msg = svc_common.bot_greet_message()
+    msg = svc_common.get_bot_greet_msg()
     gif = open("application/static/waving_dog.gif", 'rb')
     await context.bot.send_message(chat_id=update.effective_chat.id, text=msg)
     await context.bot.send_animation(chat_id=update.effective_chat.id, animation=gif)
+
+async def stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    bot_msg = "<strong>" + svc_common.get_bot_stats_msg() + "</strong>"
+
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    s.connect(("8.8.8.8", 80))
+    host = s.getsockname()[0]
+    port = vault.get_value("app", "config", "port")
+
+    stats_url = f'http://{host}:{port}/get_stats?snapshot'
+    stats = (requests.get(stats_url).content).decode("utf-8")
+    msg = """{}\n\n{}""".format(bot_msg, stats)
+
+    await context.bot.sendMessage(chat_id=update.effective_chat.id, 
+                                  text=svc_common.get_bot_confirm_msg(), 
+                                  reply_to_message_id=update.message.message_id)
+    await context.bot.send_message(chat_id=update.effective_chat.id, text=msg, parse_mode="HTML")
 
 def start_bot():
     bot_token = vault.get_value("EXTERNAL_API", "telegram", "token")
@@ -27,9 +43,9 @@ def start_bot():
 
     logging.info("Starting telegram bot...")
 
-    commands = [start]
-    for cmd in commands:
-        application.add_handler(CommandHandler(cmd.__name__, cmd, __white_listed_users()))
+    commands = [start, stats]
+    for func in commands:
+        application.add_handler(CommandHandler(func.__name__, func, __white_listed_users()))
 
     application.run_polling()
 
@@ -54,31 +70,31 @@ def send_detection_message(camera, timestamp, feed_url, img_filename):
 
 def request(method, endpoint, params, files):
     """
-    Function to make requests to Telegram.
+    Function to make requests to Telegram's bot API.
 
     params:
         method: 'post' or 'get' HTTP methods
-        endpoint: Any Telegram API endpoint. i.e 'sendMessage'
+        endpoint: Any Telegram bot API endpoint. i.e 'sendMessage'
         params: dict of url params
         files: dict of files
     """
     bot_token = vault.get_value("EXTERNAL_API", "telegram", "token")
+    api_url = vault.get_value("external_api", "telegram", "url")
+    url = f'{api_url}{bot_token}/{endpoint}'
 
-    url = f'{API_URL}{bot_token}/{endpoint}'
-
-    response = {"post" : post,
-                "get" : get
-                }.get(method.lower(), invalid_method)(url, params, files=files)
+    response = {"post" : __post,
+                "get" : __get
+                }.get(method.lower(), __invalid_method)(url, params, files=files)
 
     return response
 
-def get(url, params, **__):
+def __get(url, params, **__):
     return requests.get(url, params)
 
-def post(url, params, files=None):
+def __post(url, params, files=None):
     return requests.post(url, params, files=files)
 
-def invalid_method(*_, **__):
+def __invalid_method(*_, **__):
     bad_request = requests.Response()
     bad_request.status_code = 400
     return bad_request

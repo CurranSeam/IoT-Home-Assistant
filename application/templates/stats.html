@@ -34,17 +34,26 @@
       xhr.open('GET', "{{ url_for('get_stats') }}", true);
   
       xhr.onreadystatechange = function() {
-          var all_lines = xhr.responseText.split('\n');
-          last_line = all_lines.length - 2
-  
-          var stats = "<p>" + all_lines[last_line - 4] + "<br><br>" + all_lines[last_line - 3] + "<br><br>" +  all_lines[last_line - 2] + "<br><br>" +  all_lines[last_line - 1] + "<br><br>" + all_lines[last_line]
-          document.getElementById('stats').innerHTML = stats
-  
-          if (xhr.readyState == XMLHttpRequest.DONE) {
-              /*alert("The End of Stream");*/
-              latest.textContent = "Video stream offline :O("
-          }
-      }
+        var all_lines = xhr.responseText.split('\n');
+        var lines = all_lines.filter(e => e);
+
+        /* The last number should be: lines of stats - 1*/
+        var last_line = (lines.length - 2) - 4;
+        var stats = "<p>";
+
+        /* Sentinel value is lines of stats */
+        for (var i = 0; i < 5; i++) {
+          stats += lines[last_line] + "<br><br>";
+          last_line++;
+        }
+
+        document.getElementById('stats').innerHTML = stats;
+
+        if (xhr.readyState == XMLHttpRequest.DONE) {
+          /*alert("The End of Stream");*/
+          latest.textContent = "Video stream offline :O(";
+        }
+      };
       xhr.send();
     </script>
 

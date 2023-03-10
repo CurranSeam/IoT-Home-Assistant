@@ -79,7 +79,7 @@ def request(method, endpoint, params, files):
         files: dict of files
     """
     bot_token = vault.get_value("EXTERNAL_API", "telegram", "token")
-    api_url = vault.get_value("external_api", "telegram", "url")
+    api_url = vault.get_value("EXTERNAL_API", "telegram", "url")
     url = f'{api_url}{bot_token}/{endpoint}'
 
     response = {"post" : __post,

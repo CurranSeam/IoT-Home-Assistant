@@ -1,13 +1,11 @@
-import psutil
 import time
 import datetime
 
 from application import app
 from application import TFLite_detection_stream
 from application.services import security as vault, sms_service
+from application.services import svc_common
 from flask import Response, request, make_response, render_template, jsonify
-
-START_TIME = time.time()
 
 # -------------------------------------------------------------------------------------------------
 # HOME
@@ -131,40 +129,19 @@ def stats():
 @app.route("/get_stats")
 def get_stats():
     global frame_rate_calc
+
+    snap = request.args.get('snapshot', None)
+
 	# return the response generated along with the specific media
 	# type (mime type)
-    def generate():
+    def realtime():
         while True:
-            memory = psutil.virtual_memory()
-
-            # Divide from Bytes -> KB -> MB
-            available = round(memory.available/1024.0/1024.0,1)
-            mem_total = round(memory.total/1024.0/1024.0,1)
-
-            disk = psutil.disk_usage('/')
-
-            # Divide from Bytes -> KB -> MB -> GB
-            free = round(disk.free/1024.0/1024.0/1024.0,1)
-            disk_total = round(disk.total/1024.0/1024.0/1024.0,1)
-
-            time_dif = time.time() - START_TIME
-            d = divmod(time_dif, 86400) # days
-            h = divmod(d[1],3600)  # hours
-            m = divmod(h[1],60)  # minutes
-            s = m[1] # seconds
-
-            uptime = "%d days, %d hours, %d minutes, %d seconds" % (d[0],h[0],m[0], s)
- 
-            stats = """\
-                FPS: %s\nServer uptime: %s\nCPU temperature: %s °C\nMemory: %s\nDisk: %s
-            """%(str(int(TFLite_detection_stream.frame_rate_calc)),
-                 str(uptime), 
-                 str(psutil.cpu_percent()), 
-                 str(available) + 'MB free / ' + str(mem_total) + 'MB total ( ' + str(memory.percent) + '% )', 
-                 str(free) + 'GB free / ' + str(disk_total) + 'GB total ( ' + str(disk.percent) + '% )'
-                )
-            yield stats
+            yield svc_common.get_server_stats()
             time.sleep(0.1)
 
-    return Response(generate(), mimetype='text/plain')
+    def snapshot():
+        return svc_common.get_server_stats(False)
+
+    func = realtime if snap == None else snapshot
+    return Response(func(), mimetype='text/plain')
 # -------------------------------------------------------------------------------------------------

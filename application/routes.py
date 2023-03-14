@@ -5,6 +5,7 @@ from application import app
 from application import TFLite_detection_stream
 from application.services import security as vault, sms_service
 from application.services import svc_common
+from application.services import telegram
 from flask import Response, request, make_response, render_template, jsonify
 
 # -------------------------------------------------------------------------------------------------
@@ -66,13 +67,13 @@ def update_sms_status(user):
     # Update the user's record in the database
     vault.put_value("recipients", user, "active", str(sms_status))
 
-    # Send sms notification of status change
+    # Send notification of status change
     if sms_status:
-        # we are opting in to sms notifications
-        sms_service.send_opt_message(user, True, TFLite_detection_stream.FEED_URL + "/settings")
+        # we are opting in to notifications
+        telegram.send_opt_message(user, True, TFLite_detection_stream.FEED_URL + "/settings")
     else:
         # opted out
-        sms_service.send_opt_message(user, False, TFLite_detection_stream.FEED_URL + "/settings")
+        telegram.send_opt_message(user, False, TFLite_detection_stream.FEED_URL + "/settings")
 
     # Return a response to the frontend
     return jsonify({'success': True}), 200

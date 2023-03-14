@@ -48,6 +48,8 @@ if __name__ == "__main__":
         help="ephemeral port number of the server (1024 to 65535)")
     parser.add_argument('--channels', help='Number of camera channels in the network',
                     default=6)
+    
+    logging.basicConfig(level=logging.INFO)
 
     # Start rotating logger.
     logger = logging.getLogger("Rotating Log")

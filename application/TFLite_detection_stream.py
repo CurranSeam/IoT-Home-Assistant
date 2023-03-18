@@ -127,9 +127,6 @@ def detection():
             frames.append(pic)
 
         for idx, f in enumerate(frames):
-            # Force only use driveway. This can be removed if we
-            # want to add detection on the other cameras.
-
             # Only do detection on selected cameras.
             if not CAMERAS.get(keys[idx])[2]:
                 continue
@@ -165,9 +162,6 @@ def detection():
 
             # Draw framerate in corner of frame
             # cv2.putText(frame,'FPS: {0:.2f}'.format(frame_rate_calc),(30,50),cv2.FONT_HERSHEY_SIMPLEX,1,(255,255,0),2,cv2.LINE_AA)
-
-        # All the results have been drawn on the frame, so it's time to display it.
-        # cv2.imshow('SeamNet', frame) # uncomment for local video display
 
         with lock:
             for idx, cam in enumerate(CAMERAS.keys()):

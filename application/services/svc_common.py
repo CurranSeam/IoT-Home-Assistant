@@ -5,13 +5,16 @@ from application.services import security as vault
 from application import TFLite_detection_stream
 
 START_TIME = time.time()
-ALERT_TITLE = "SeamBot Alert"
 
-def get_detection_message(camera, timestamp, feed_url):
+def get_detection_message(camera, timestamp, feed_url=None):
     # Remove milliseconds for readability
     timestamp = timestamp.replace(microsecond=0)
 
-    return "{}\n\nPerson detected on {}\n\nat {}\n\nView live feed below:\n{}\n\n(v  '  -- ' )>︻╦╤─ - - - ".format(ALERT_TITLE, camera, str(timestamp), str(feed_url))
+    feed_str = {
+        None : "Visit SeamNet for live viewing."
+    }.get(feed_url, f"For live viewing, click here:\n{str(feed_url)}")
+
+    return f"Person detected on {camera}\n\nat {str(timestamp)}\n\n{feed_str}"
 
 def get_bot_greet_msg():
     return "Hi!\n\nI'm SeamBot, your home assistant.\n\nSee /help for a list of commands that I can respond to."
@@ -25,6 +28,22 @@ def get_bot_forbidden_msg(user_id):
 
 def get_bot_stats_msg():
     return "Here are the stats for SeamNet:"
+
+def get_opt_message(user, opt_in, url=None):
+    verbs = {
+        True : ["into", "out"],
+        False : ["out of", "back in"]
+    }.get(opt_in)
+
+    opt_action = {
+        None: "head to settings."
+    }.get(url, f"click here:\n{url}")
+
+    text = """\
+    %s,\n\nYou have opted %s SeamNet notifications.\n\nTo opt %s, %s
+    """%(user, verbs[0], verbs[1], opt_action)
+
+    return text
 
 def get_active_users_value(field):
     values = []

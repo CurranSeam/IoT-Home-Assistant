@@ -131,6 +131,16 @@
     <div id="snackbar">Update successful :O)</div>
 
     <script>
+      // Allows us to format strings in a pythonic way.
+      String.prototype.format = function() {
+        var formatted = this;
+        for (var i = 0; i < arguments.length; i++) {
+            var regexp = new RegExp('\\{'+i+'\\}', 'gi');
+            formatted = formatted.replace(regexp, arguments[i]);
+        }
+        return formatted;
+      };
+
       function updateSmsNotifications(checkbox) {
         // Get the user ID from the "data-user-id" attribute
         var user = checkbox.getAttribute('data-user-id');
@@ -145,11 +155,15 @@
             'Content-Type': 'application/json'
           }
         })
-        .then(function(response) {
-          updateSnackbar("SMS notifications updated :O)")
+        .then((response) => {
+          let msg = ""
+          response.ok ? msg = "SMS notifications updated for \"{0}\" :O)".format(user) :
+                        msg = "SMS notifications failed to update for \"{0}\" :O(".format(user)
+          updateSnackbar(msg)
         })
-        .catch(function(error) {
+        .catch((error) => {
           // Handle any errors
+          updateSnackbar(error)
         });
       }
 
@@ -167,11 +181,15 @@
             'Content-Type': 'application/json'
           }
         })
-        .then(function(response) {
-          updateSnackbar("Camera detection updated :O)")
+        .then((response) => {
+          let msg = ""
+          response.ok ? msg = "\"{0}\" camera detection updated :O)".format(cam) :
+                        msg = "Failed to update \"{0}\" camera detection :O(".format(cam)
+          updateSnackbar(msg)
         })
-        .catch(function(error) {
+        .catch((error) => {
           // Handle any errors
+          updateSnackbar(error)
         });
       }
 
@@ -189,11 +207,15 @@
             'Content-Type': 'application/json'
           }
         })
-        .then(function(response) {
-          updateSnackbar("Message cooloff updated :O)")
+        .then((response) => {
+          let msg = ""
+          response.ok ? msg = "Message cooloff updated :O)" :
+                        msg = "Failed to update message cooloff :O("
+          updateSnackbar(msg)
         })
-        .catch(function(error) {
+        .catch((error) => {
           // Handle any errors
+          updateSnackbar(error)
         });
       }
 
@@ -211,11 +233,15 @@
             'Content-Type': 'application/json'
           }
         })
-        .then(function(response) {
-          updateSnackbar("Confidence threshold updated :O)")
+        .then((response) => {
+          let msg = ""
+          response.ok ? msg = "Confidence threshold updated :O)" :
+                        msg = "Failed to update confidence threshold :O("
+          updateSnackbar(msg)
         })
-        .catch(function(error) {
+        .catch((error) => {
           // Handle any errors
+          updateSnackbar(error)
         });
       }
 

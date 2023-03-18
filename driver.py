@@ -1,6 +1,7 @@
 # Setup for application including argument parser. 
 import argparse
 import importlib.util
+import logging
 import os
 import numpy as np
 import threading
@@ -11,6 +12,9 @@ from application import TFLite_detection_stream
 from application.services import security as vault
 from application.services import telegram
 from application.services.video_stream import VideoStream
+from logging.handlers import TimedRotatingFileHandler
+
+BACKUP_FILE_COUNT = 10
 
 class FlaskThread(threading.Thread):
     def __init__(self, args):
@@ -44,6 +48,20 @@ if __name__ == "__main__":
         help="ephemeral port number of the server (1024 to 65535)")
     parser.add_argument('--channels', help='Number of camera channels in the network',
                     default=6)
+
+    # Start rotating logger.
+    logger = logging.getLogger("Rotating Log")
+    logger.setLevel(logging.DEBUG)
+
+    handler = TimedRotatingFileHandler(filename="logging/kernel_debug.log",
+                                       when="d",
+                                       interval=1,
+                                       backupCount=BACKUP_FILE_COUNT)
+
+    fmt = '%(asctime)s %(levelname)s %(message)s'
+    formatter = logging.Formatter(fmt=fmt, datefmt='%m/%d/%Y %H:%M:%S')
+    handler.setFormatter(formatter)
+    logger.addHandler(handler)
 
     args = parser.parse_args()
 

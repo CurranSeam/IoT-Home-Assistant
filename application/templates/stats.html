@@ -14,6 +14,7 @@
     <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49" crossorigin="anonymous"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js" integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy" crossorigin="anonymous"></script>
+
     <script>
       $(function(){
         $("#navbar").load("../static/navbar.html");
@@ -29,32 +30,20 @@
     </div>
 
     <script>
-      var latest = document.getElementById('stats');
-      var xhr = new XMLHttpRequest();
-      xhr.open('GET', "{{ url_for('get_stats') }}", true);
-  
-      xhr.onreadystatechange = function() {
-        var all_lines = xhr.responseText.split('\n');
-        var lines = all_lines.filter(e => e);
+      const uri = "ws://" + "{{ host }}" + ":{{ port }}"
+      const socket = new WebSocket(uri);
 
-        /* The last number should be: lines of stats - 1*/
-        var last_line = (lines.length - 2) - 4;
-        var stats = "<p>";
+      socket.onmessage = function(event) {
+        const data = event.data.split("\n");
+        var lines = data.filter(e => e);
 
-        /* Sentinel value is lines of stats */
-        for (var i = 0; i < 5; i++) {
-          stats += lines[last_line] + "<br><br>";
-          last_line++;
+        var stats = "";
+        for (var i = 0; i < lines.length; i++) {
+          stats += lines[i] + "<br><br>";
         }
 
         document.getElementById('stats').innerHTML = stats;
-
-        if (xhr.readyState == XMLHttpRequest.DONE) {
-          /*alert("The End of Stream");*/
-          latest.textContent = "Video stream offline :O(";
-        }
       };
-      xhr.send();
     </script>
 
   </body>

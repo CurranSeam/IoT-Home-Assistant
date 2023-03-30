@@ -1,5 +1,6 @@
 import time
 import datetime
+import json
 
 from application import app
 from application import TFLite_detection_stream
@@ -112,31 +113,26 @@ def video_feed(cam):
 	# return the response generated along with the specific media
 	# type (mime type)
     return Response(TFLite_detection_stream.generate_frame(cam),
-		mimetype = "multipart/x-mixed-replace; boundary=frame")    
-
-# DELETE IF UNUSED
-# @app.route("/active_cam", methods=['POST'])
-# def active_cam():
-#     global active_cam
-#     cam = request.form['active_cam']
-#     active_cam = cam.split("/")[-2]
-    
-#     return cam
+		mimetype = "multipart/x-mixed-replace; boundary=frame")
 
 # -------------------------------------------------------------------------------------------------
 # STATS
 @app.route("/stats")
 def stats():
-    return render_template("stats.html")
+    hostname = vault.get_value("APP", "config", "host")
+    socket_port = vault.get_value("SOCKETS", "stats", "port")
 
+    return render_template("stats.html", host=hostname, port=socket_port)
+
+# Deprecated
+# Can still hit endpoint in browser, but currently unused.
 @app.route("/get_stats")
 def get_stats():
-    global frame_rate_calc
-
     snap = request.args.get('snapshot', None)
 
 	# return the response generated along with the specific media
 	# type (mime type)
+
     def realtime():
         while True:
             yield svc_common.get_server_stats()
@@ -146,5 +142,5 @@ def get_stats():
         return svc_common.get_server_stats(False)
 
     func = realtime if snap == None else snapshot
-    return Response(func(), mimetype='text/plain')
+    return json.dumps(func())
 # -------------------------------------------------------------------------------------------------

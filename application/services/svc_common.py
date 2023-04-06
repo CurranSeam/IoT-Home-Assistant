@@ -11,7 +11,7 @@ def get_detection_message(camera, timestamp, feed_url=None):
     timestamp = timestamp.replace(microsecond=0)
 
     feed_str = {
-        None : "Visit SeamNet for live viewing."
+        None : "Visit SeamNet for live viewing.\n"
     }.get(feed_url, f"For live viewing, click here:\n{str(feed_url)}")
 
     return f"Person detected on {camera}\n\nat {str(timestamp)}\n\n{feed_str}"
@@ -29,7 +29,7 @@ def get_bot_forbidden_msg(user_id):
 def get_bot_stats_msg():
     return "Here are the stats for SeamNet:"
 
-def get_opt_message(user, opt_in, url=None):
+def get_opt_message(user, opt_in, service, url=None):
     verbs = {
         True : ["into", "out"],
         False : ["out of", "back in"]
@@ -40,8 +40,8 @@ def get_opt_message(user, opt_in, url=None):
     }.get(url, f"click here:\n{url}")
 
     text = """\
-    %s,\n\nYou have opted %s SeamNet notifications.\n\nTo opt %s, %s
-    """%(user, verbs[0], verbs[1], opt_action)
+    %s,\n\nYou have opted %s SeamNet's %s notifications.\n\nTo opt %s, %s
+    """%(user, verbs[0], service, verbs[1], opt_action)
 
     return text
 

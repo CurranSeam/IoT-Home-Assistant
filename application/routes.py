@@ -3,9 +3,10 @@ import datetime
 
 from application import app
 from application import TFLite_detection_stream
-from application.services import security as vault, sms_service
+from application.services import security as vault
 from application.services import svc_common
 from application.services import telegram
+from application.repository import user as User
 from flask import Response, request, make_response, render_template, jsonify
 
 # -------------------------------------------------------------------------------------------------
@@ -24,8 +25,8 @@ def index():
 # SETTINGS
 # Define the custom Jinja filter
 @app.template_filter()
-def zip_lists(a, b, c):
-    return zip(a, b, c)
+def zip_lists(a, b, c, d):
+    return zip(a, b, c, d)
 
 # Register the custom filter with Jinja
 app.jinja_env.filters['zip'] = zip_lists
@@ -40,40 +41,41 @@ app.jinja_env.filters['zip_detection'] = zip_lists_detection
 
 @app.route("/settings")
 def settings():
-    status = []
-    numbers = []
     cameras_status = []
-
-    recipients = vault.get_keys("recipients")
     cameras = TFLite_detection_stream.CAMERAS.keys()
 
-    for key in recipients:
-        status.append(int(vault.get_value("recipients", key, "active")))
-        numbers.append("XXX-XXX-" + vault.get_value("recipients", key, "phone_number")[-4:])
+    names = User.get_first_names()
+    tg_status = User.get_telegram_notify()
+    sms_status = User.get_sms_notify()
+    numbers = [f'XXX-XXX-{str(num)[-4:]}' for num in User.get_phone_numbers()]
 
     for key in cameras:
         cameras_status.append(TFLite_detection_stream.CAMERAS.get(key)[2])
 
     cooloff = TFLite_detection_stream.message_cooloff.total_seconds()
-    return render_template("settings.html", users=recipients, statuses=status,
-                            phone_nums=numbers, min_conf=TFLite_detection_stream.min_conf_threshold,
+    return render_template("settings.html", users=names, telegram_statuses=tg_status,
+                            sms_statuses = sms_status, phone_nums=numbers,
+                            min_conf=TFLite_detection_stream.min_conf_threshold,
                             message_cooloff=cooloff, cams=cameras, cam_statuses=cameras_status)
 
-@app.route('/users/<string:user>/sms-notifications', methods=["PUT"])
-def update_sms_status(user):
+@app.route('/users/<string:user>/<string:service>/notifications', methods=["PUT"])
+def update_notification_status(user, service):
     data = request.get_json()
-    sms_status = int(data['sms_notifications'])
+    notification_status = int(data['notification_status'])
 
-    # Update the user's record in the database
-    vault.put_value("recipients", user, "active", str(sms_status))
+    if service.lower() == "telegram":
+        User.update_telegram_notify(user, notification_status)
+    # sms
+    else:
+        User.update_sms_notify(user, notification_status)
 
     # Send notification of status change
-    if sms_status:
+    if notification_status:
         # we are opting in to notifications
-        telegram.send_opt_message(user, True, TFLite_detection_stream.FEED_URL + "/settings")
+        telegram.send_opt_message(user, True, service, TFLite_detection_stream.FEED_URL + "/settings")
     else:
         # opted out
-        telegram.send_opt_message(user, False, TFLite_detection_stream.FEED_URL + "/settings")
+        telegram.send_opt_message(user, False, service, TFLite_detection_stream.FEED_URL + "/settings")
 
     # Return a response to the frontend
     return jsonify({'success': True}), 200

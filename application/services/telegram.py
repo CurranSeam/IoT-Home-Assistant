@@ -9,6 +9,7 @@ from application.services import svc_common
 from application.services import security as vault
 from application.services import sms_service
 from application.utils.exception_handler import try_exec
+from application.repository import user as User
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     msg = svc_common.get_bot_greet_msg()
@@ -49,9 +50,9 @@ def send_detection_message(camera, timestamp, feed_url, img_filename):
     file = {'photo' : open(img_filename, 'rb')}
     feed_url = f"<a href='{feed_url}'>Feed</a>"
     text = svc_common.get_detection_message(camera, timestamp, feed_url);
-    allowed_chat_ids = svc_common.get_active_users_value("chat_id")
+    active_chat_ids = User.get_telegram_chat_ids(active=1)
 
-    for chat_id in allowed_chat_ids:
+    for chat_id in active_chat_ids:
         params = {
             'chat_id' : chat_id,
             'caption' : text,
@@ -60,12 +61,13 @@ def send_detection_message(camera, timestamp, feed_url, img_filename):
 
         response = request("post", "sendPhoto", params, file)
 
-        try_exec(__handle_error, response, sms_service.send_detection_message, camera, timestamp)
+        try_exec(__handle_error, response, sms_service.send_detection_message, camera, timestamp, chat_id)
  
-def send_opt_message(user, opt_in, settings_url):
+def send_opt_message(user, opt_in, service, settings_url):
     settings_url = f"<a href='{settings_url}'>Settings</a>"
-    text = svc_common.get_opt_message(user, opt_in, settings_url)
-    chat_id = vault.get_value("RECIPIENTS", user, "chat_id")
+    text = svc_common.get_opt_message(user, opt_in, service, settings_url)
+
+    chat_id = User.get_telegram_chat_id(user)
 
     params = {
         'chat_id' : chat_id,
@@ -75,7 +77,7 @@ def send_opt_message(user, opt_in, settings_url):
 
     response = request("post", "sendMessage", params)
 
-    try_exec(__handle_error, response, sms_service.send_opt_message, user, opt_in)
+    try_exec(__handle_error, response, sms_service.send_opt_message, user, opt_in, service)
 
 def request(method, endpoint, params, files=None):
     """
@@ -110,9 +112,10 @@ def __invalid_method(*_, **__):
 
 def __white_listed_users():
     wl_users = filters.User()
-    allowed_chat_ids = svc_common.get_active_users_value("chat_id")
+    allowed_chat_ids = User.get_telegram_chat_ids()
     for chat_id in allowed_chat_ids:
-        wl_users._add_chat_ids(int(chat_id))
+        if chat_id is not None:
+            wl_users._add_chat_ids(chat_id)
     return wl_users
 
 def __handle_error(response, func, *args):

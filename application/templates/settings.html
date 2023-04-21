@@ -30,15 +30,19 @@
           <tr>
             <th>User</th>
             <th>Phone</th>
+            <th>Telegram Notifications</th>
             <th>SMS Notifications</th>
           </tr>
           <tbody>
-            {% for user, num, status in users|zip(phone_nums, statuses) %}
+            {% for user, num, status1, status2 in users|zip(phone_nums, telegram_statuses, sms_statuses) %}
               <tr>
                 <td>{{ user }}</td>
                 <td>{{ num }}</td>
                 <td>
-                  <input type="checkbox" name="sms_notifications" class="checkbox" data-user-id="{{ user }}" {% if status %}checked{% endif %} onclick="updateSmsNotifications(this)">
+                  <input type="checkbox" name="telegram_notifications" class="checkbox" data-user-id="{{ user }}" {% if status1 %}checked{% endif %} onclick="updateNotifications(this, 'Telegram')">
+                </td>
+                <td>
+                  <input type="checkbox" name="sms_notifications" class="checkbox" data-user-id="{{ user }}" {% if status2 %}checked{% endif %} onclick="updateNotifications(this, 'SMS')">
                 </td>
               </tr>
             {% endfor %}
@@ -131,25 +135,15 @@
     <div id="snackbar">Update successful :O)</div>
 
     <script>
-      // Allows us to format strings in a pythonic way.
-      String.prototype.format = function() {
-        var formatted = this;
-        for (var i = 0; i < arguments.length; i++) {
-            var regexp = new RegExp('\\{'+i+'\\}', 'gi');
-            formatted = formatted.replace(regexp, arguments[i]);
-        }
-        return formatted;
-      };
-
-      function updateSmsNotifications(checkbox) {
+      function updateNotifications(checkbox, service) {
         // Get the user ID from the "data-user-id" attribute
         var user = checkbox.getAttribute('data-user-id');
 
-        // Send an HTTP PUT request to the backend to update the user's SMS notifications
-        fetch('/users/' + user + '/sms-notifications', {
+        // Send an HTTP PUT request to the backend to update the user's notifications
+        fetch('/users/' + user + '/' + service + '/notifications', {
           method: 'PUT',
           body: JSON.stringify({
-            sms_notifications: checkbox.checked
+            notification_status: checkbox.checked
           }),
           headers: {
             'Content-Type': 'application/json'
@@ -157,8 +151,8 @@
         })
         .then((response) => {
           let msg = ""
-          response.ok ? msg = "SMS notifications updated for \"{0}\" :O)".format(user) :
-                        msg = "SMS notifications failed to update for \"{0}\" :O(".format(user)
+          response.ok ? msg = `${service} notifications updated for \"${user}\" :O)` :
+                        msg = `${service} notifications failed to update for \"${user}\" :O(`
           updateSnackbar(msg)
         })
         .catch((error) => {
@@ -183,8 +177,8 @@
         })
         .then((response) => {
           let msg = ""
-          response.ok ? msg = "\"{0}\" camera detection updated :O)".format(cam) :
-                        msg = "Failed to update \"{0}\" camera detection :O(".format(cam)
+          response.ok ? msg = `\"${cam}\" camera detection updated :O)` :
+                        msg = `Failed to update \"${cam}\" camera detection :O(`
           updateSnackbar(msg)
         })
         .catch((error) => {

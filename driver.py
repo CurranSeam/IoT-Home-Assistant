@@ -12,6 +12,7 @@ from application import TFLite_detection_stream
 from application.services import security as vault
 from application.services import telegram
 from application.services.video_stream import VideoStream
+from application.utils import websockets
 from logging.handlers import TimedRotatingFileHandler
 
 BACKUP_FILE_COUNT = 10
@@ -21,6 +22,7 @@ class FlaskThread(threading.Thread):
         super(FlaskThread, self).__init__()
         self.args = args
 
+    # Overrides run function in Thread superclass. Invoked upon starting thread.
     def run(self):
         logging.info("Starting flask server...")
         app.run(host=self.args.ip, port=self.args.port, threaded=True, use_reloader=False)
@@ -147,6 +149,10 @@ if __name__ == "__main__":
     else: # This is a TF1 model
         TFLite_detection_stream.boxes_idx, TFLite_detection_stream.classes_idx, TFLite_detection_stream.scores_idx = 0, 1, 2
 
+    # Write network args to envs
+    vault.put_value("APP", "config", "host", str(args.ip))
+    vault.put_value("APP", "config", "port", str(args.port))
+
     # Initialize cameras for detection
     for idx, cam_name in enumerate(TFLite_detection_stream.CAMERAS):
         # print(cam_name)
@@ -158,6 +164,9 @@ if __name__ == "__main__":
     t = threading.Thread(target=TFLite_detection_stream.detection)
     t.daemon = True
     t.start()
+
+    # Start websockets
+    websockets.start()
 
     # start the flask app
     flask_thread = FlaskThread(args)

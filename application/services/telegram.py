@@ -1,6 +1,5 @@
 import requests
 import logging
-import socket
 
 from telegram import Update
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, filters
@@ -19,14 +18,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
     bot_msg = "<strong>" + svc_common.get_bot_stats_msg() + "</strong>"
-
-    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    s.connect(("8.8.8.8", 80))
-    host = s.getsockname()[0]
-    port = vault.get_value("app", "config", "port")
-
-    stats_url = f'http://{host}:{port}/get_stats?snapshot'
-    stats = (requests.get(stats_url).content).decode("utf-8")
+    stats = svc_common.get_server_stats(False)
     msg = """{}\n\n{}""".format(bot_msg, stats)
 
     await context.bot.sendMessage(chat_id=update.effective_chat.id, 

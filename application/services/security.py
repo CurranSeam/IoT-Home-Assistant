@@ -6,6 +6,7 @@ import env
 
 DISPATCHER = {
     "APP" : env.APP,
+    "SOCKETS" : env.SOCKETS,
     "CAMERAS" : env.CAMERAS,
     "RECIPIENTS" : env.RECIPIENTS,
     "CREDENTIALS" : env.CREDENTIALS,

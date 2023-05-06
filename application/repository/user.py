@@ -1,5 +1,8 @@
 from application.models.user import User
 
+def get_user(username):
+    return User.get(User.username == username)
+
 # Add param to indicate if ordering or not.
 def get_first_names():
     users = __get_users_order_by(User.id)

@@ -8,18 +8,70 @@ from application.services import security as vault
 from application.services import svc_common
 from application.services import telegram
 from application.repository import user as User
+from application.utils.decorators import token_required
 from flask import Response, request, make_response, render_template, jsonify
+
+from werkzeug.security import generate_password_hash
+from werkzeug.security import check_password_hash
+
+from datetime import datetime, timedelta
+import jwt
+
+# -------------------------------------------------------------------------------------------------
+# LOGIN
+@app.route("/login")
+def login():
+    # try:
+    #     # Authenticate username and password against the Vault.
+    #     vault.authenticate(request.authorization.username, request.authorization.password)
+    # except:
+    #     return make_response('Could not verify!', 401, {'WWW-Authenticate' : 'Basic realm="Login Required"'})
+    # return render_template('login.html')
+
+    # creates dictionary of form data
+    # auth = request.form
+    username = request.authorization.username
+    pwd = request.authorization.password
+  
+    if not username or not pwd:
+        # returns 401 if any email or / and password is missing
+        return make_response(
+            'Could not verify',
+            401,
+            {'WWW-Authenticate' : 'Basic realm ="Login required !!"'}
+        )
+  
+    user = User.get_user(username=username)
+  
+    if not user:
+        # returns 401 if user does not exist
+        return make_response(
+            'Could not verify',
+            401,
+            {'WWW-Authenticate' : 'Basic realm ="User does not exist !!"'}
+        )
+  
+    if check_password_hash(user.password, pwd):
+        # generates the JWT Token
+        token = jwt.encode({
+            'public_id': user.username,
+            'exp' : datetime.utcnow() + timedelta(minutes = 30)
+        })
+  
+        return make_response(jsonify({'token' : token.decode('UTF-8')}), 201)
+    # returns 403 if password is wrong
+    return make_response(
+        'Could not verify',
+        403,
+        {'WWW-Authenticate' : 'Basic realm ="Wrong Password !!"'}
+    )
 
 # -------------------------------------------------------------------------------------------------
 # HOME
 @app.route("/")
+@token_required
 def index():
 	# return the rendered template
-    try:
-        # Authenticate username and password against the Vault.
-        vault.authenticate(request.authorization.username, request.authorization.password)
-    except:
-        return make_response('Could not verify!', 401, {'WWW-Authenticate' : 'Basic realm="Login Required"'})
     return render_template("index.html")
 
 # -------------------------------------------------------------------------------------------------
@@ -41,6 +93,7 @@ def zip_lists_detection(a, b):
 app.jinja_env.filters['zip_detection'] = zip_lists_detection
 
 @app.route("/settings")
+@token_required
 def settings():
     cameras_status = []
     cameras = TFLite_detection_stream.CAMERAS.keys()

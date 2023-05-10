@@ -1,4 +1,36 @@
 from application.models.user import User
+from application.utils.exception_handler import log_exception
+
+def get_user(id=None,
+             first_name=None,
+             phone_number=None,
+             username=None,
+             telegram_chat_id=None):
+    """
+    Returns a user based on given parameter.
+
+    **IMPORTANT**: Can only pass in one
+    parameter, otherwise None is returned.
+    """
+
+    params = [id, first_name, phone_number, username, telegram_chat_id]
+
+    non_null_count = sum(param is not None for param in params)
+
+    if non_null_count != 1:
+        e = ValueError('application/repository/user.py: Exactly one parameter must be non-null')
+        log_exception(e)
+        return None
+
+    user = {
+        id: lambda: User.get(User.id == id),
+        first_name: lambda: User.get(User.first_name == first_name),
+        phone_number: lambda: User.get(User.phone_number == phone_number),
+        username: lambda: User.get(User.username == username),
+        telegram_chat_id: lambda: User.get(User.telegram_chat_id == telegram_chat_id)
+    }[next(filter(lambda param: param is not None, params))]
+
+    return user()
 
 # Add param to indicate if ordering or not.
 def get_first_names():

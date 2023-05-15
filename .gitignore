@@ -3,3 +3,4 @@ snapshot.jpeg
 *.pyc
 init_db.py
 database.db
+venv/

@@ -11,6 +11,7 @@ from application import app
 from application import TFLite_detection_stream
 from application.services import security as vault
 from application.services import telegram
+from application.services import mqtt
 from application.services.video_stream import VideoStream
 from application.utils import websockets
 from logging.handlers import TimedRotatingFileHandler
@@ -165,17 +166,20 @@ if __name__ == "__main__":
     t.daemon = True
     t.start()
 
-    # Start websockets
-    websockets.start()
-
     # start the flask app
     flask_thread = FlaskThread(args)
+    flask_thread.daemon = True
     flask_thread.start()
 
     # start services
+    websockets.start()
+    mqtt.start()
     telegram.start_bot()
 
     # Clean up
     for cam in TFLite_detection_stream.CAMERAS:
         TFLite_detection_stream.CAMERAS.get(cam)[0].stop()
-        logging.info(f'stopped cam stream: {cam}')
+
+    logging.info("Camera streams exited")
+
+    mqtt.stop()

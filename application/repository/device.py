@@ -1,0 +1,49 @@
+from application.models.device import Device
+from application.repository import user as User
+from application.utils.exception_handler import log_exception
+
+def get_device(id=None,
+             name=None,
+             user=None):
+    """
+    Returns a device based on a single given parameter.
+
+    **IMPORTANT**: Can only pass in one
+    parameter, otherwise None is returned.
+
+    :param user: a User record.
+    """
+
+    params = [id, name, user]
+
+    non_null_count = sum(param is not None for param in params)
+
+    if non_null_count != 1:
+        e = ValueError('application/repository/user.py: Exactly one parameter must be non-null')
+        log_exception(e)
+        return None
+
+    device = {
+        id: lambda: Device.get(Device.id == id),
+        name: lambda: Device.get(Device.name == name),
+        user: lambda: Device.get(Device.user == user),
+    }[next(filter(lambda param: param is not None, params))]
+
+    return device()
+
+def get_devices():
+    return Device.select()
+
+def get_device_by_user(user_id, device_name=None):
+    if user_id and device_name:
+        return Device.get(Device.user.id == user_id and Device.name == device_name)
+    else:
+        return Device.get(Device.user.id == user_id)
+
+def update_status(user_id, name, status):
+    user = User.get_user(user_id)
+
+    device = Device.get(Device.user == user and Device.name == name)
+    device.status = status
+
+    device.save()

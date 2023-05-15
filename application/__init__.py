@@ -3,7 +3,7 @@ from peewee import SqliteDatabase
 
 # Creates a peewee database instance.
 # Models will use this database to persist information
-database = SqliteDatabase('database.db')
+database = SqliteDatabase('database.db', pragmas={'foreign_keys': 1})
 
 app = Flask(__name__)
 

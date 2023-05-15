@@ -16,7 +16,7 @@ class User(BaseModel):
     phone_number = IntegerField()
     username = CharField(unique=True)
     password = CharField()
-    created_at = DateTimeField(default=datetime.datetime.now())
+    created_at = DateTimeField(default=datetime.datetime.now)
     sms_notify = IntegerField(default=1)
     telegram_notify = IntegerField(default=1)
     telegram_chat_id = IntegerField(null=True)

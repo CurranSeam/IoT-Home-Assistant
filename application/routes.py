@@ -20,6 +20,7 @@ def index():
         vault.authenticate(request.authorization.username, request.authorization.password)
     except:
         return make_response('Could not verify!', 401, {'WWW-Authenticate' : 'Basic realm="Login Required"'})
+
     return render_template("index.html")
 
 # -------------------------------------------------------------------------------------------------
@@ -144,3 +145,8 @@ def get_stats():
     func = realtime if snap == None else snapshot
     return json.dumps(func())
 # -------------------------------------------------------------------------------------------------
+#UTILITY
+@app.route("/get_bot_username")
+def get_bot_username():
+    username = vault.get_value("APP", "config", "bot_username")
+    return username

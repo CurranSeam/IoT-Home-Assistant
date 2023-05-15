@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
+  <meta http-equiv="Pragma" content="no-cache"/>
+  <meta http-equiv="Expires" content="0"/>
+
+  <link rel="stylesheet" href="styles.css">
+  <script src="http://code.jquery.com/jquery-2.1.4.min.js"></script>
+
+</head>
+<body>
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+        <p class="text"> SeamNet Services &reg;</p>
+        <div>
+          <a href="#" onclick="openTelegram()">
+            <img src="https://pngimg.com/uploads/telegram/telegram_PNG20.png" class="logo">
+          </a>
+          <img src="https://apps-cdn.athom.com/app/com.paveld.tasmota/17/416f22d3-812c-4d53-81d3-6637f54e5f74/drivers/tasmota_mqtt/assets/images/large.png" class="logo">
+          <img src="https://th.bing.com/th/id/R.72d5e0371bcc67e16fc9879377771a62?rik=FFdwwNFVb%2b45Xw&riu=http%3a%2f%2fguy.pastre.org%2fwp-content%2fuploads%2f2016%2f03%2fRaspberry_Pi_Logo.svg.png&ehk=5j%2fMwdf3B%2f5oeOY9E4zg801GfBohZmw5OjVjjxaDiDg%3d&risl=&pid=ImgRaw&r=0" class="logo">
+          <img src="https://th.bing.com/th/id/R.78b53aba80711ecf9389815f4f8abfdf?rik=wFctHGmQwpl%2bvQ&pid=ImgRaw&r=0" class="logo">
+        </div>
+        <p class="text">Copyright &copy; 2023 Seam | All Rights Reserved</p>
+    </div>
+  </footer>
+
+  <script>
+    function openTelegram() {
+      // Send an HTTP GET request to the backend for the Telegram bot's username
+      fetch('/get_bot_username')
+      .then(resp => resp.text())
+      .then(data => {
+        var bot_username = data.trim();
+        var isMobile = /iPhone|iPad|iPod|Android|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        var webUrl = `https://t.me/${bot_username}?start=start`
+        var appUrl = `tg://resolve?domain=${bot_username}&start=start`;
+
+        if (isMobile && navigator.userAgent.indexOf("Android") >= 0 && !window.location.hash) {
+          setTimeout(function () {
+            window.location = "https://play.google.com/store/apps/details?id=org.telegram.messenger";
+          }, 100);
+          window.location = appUrl;
+        } else if (isMobile && (navigator.userAgent.indexOf("iPhone") >= 0 || navigator.userAgent.indexOf("iPad") >= 0)) {
+          setTimeout(function () {
+            window.location = "https://itunes.apple.com/app/telegram-messenger/id686449807";
+          }, 100);
+          window.location = appUrl;
+        } else {
+          if (navigator.userAgent.indexOf("Windows") >= 0 || navigator.userAgent.indexOf("Macintosh") >= 0 || navigator.userAgent.indexOf("Linux") >= 0) {
+            setTimeout(function () {;
+              window.open(webUrl);
+            }, 100);
+            window.location = appUrl;
+          } else {
+            window.location = webUrl;
+          }
+        }
+      })
+      .catch((error) => {
+        // Handle any errors
+      });
+    }
+  </script>
+
+</body>
+</html>

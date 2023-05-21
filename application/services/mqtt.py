@@ -39,7 +39,7 @@ def on_message(client, userdata, msg):
 
         Device.update_status(user_id, device_name, status)
 
-    if cmd == "SENSOR":
+    elif cmd == "SENSOR":
         readings = json.loads(msg.payload)["ENERGY"]
 
         status = device.status.split("\n\n")[0] + "\n\n"

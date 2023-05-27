@@ -32,6 +32,12 @@ def get_user(id=None,
 
     return user()
 
+def get_users_by_id_asc():
+    """
+    Returns list of users in ascending order by first name.
+    """
+    return __get_users_order_by(User.id)
+
 # Add param to indicate if ordering or not.
 def get_first_names():
     users = __get_users_order_by(User.id)

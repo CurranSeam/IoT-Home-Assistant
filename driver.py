@@ -124,7 +124,6 @@ if __name__ == "__main__":
     if use_TPU:
         TFLite_detection_stream.interpreter = Interpreter(model_path=PATH_TO_CKPT,
                                 experimental_delegates=[load_delegate('libedgetpu.so.1.0')])
-        print(PATH_TO_CKPT)
     else:
         TFLite_detection_stream.interpreter = Interpreter(model_path=PATH_TO_CKPT)
 

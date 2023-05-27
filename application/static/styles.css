@@ -156,19 +156,19 @@ h1 {
   display: table;
 }
 #tableContainer-2 {
-  vertical-align: middle;
+  /* vertical-align: middle; */
   display: table-cell;
   height: 100%;
 }
 #tableContainer-1-small {
   height: 100%;
-  width: 20%;
+  width: 80%;
   display: table;
 }
 .user-table {
   margin: 0 auto; /* center the table */
   border-collapse: collapse; /* remove the cell borders */
-  width: 50%; /* set the table width */
+  width: 80%; /* set the table width */
 }
 .user-table th,
 .user-table td {
@@ -189,6 +189,7 @@ input.checkbox {
   width: 35px;
 }
 input.slider {
+  cursor: pointer;
   transform: scale(1.6)
 }
 

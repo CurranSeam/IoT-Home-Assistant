@@ -10,6 +10,8 @@ class BaseModel(Model):
 
 class Device(BaseModel):
     name = CharField()
-    status = TextField(null=True)
+    is_on = BooleanField(default=False)
+    telemetry_period = IntegerField(default=300)
+    status = TextField(default="No device data yet (system delay).")
     created_at = DateTimeField(default=datetime.datetime.now)
     user = ForeignKeyField(User, backref='devices')

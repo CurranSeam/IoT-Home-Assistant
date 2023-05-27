@@ -40,10 +40,23 @@ def get_device_by_user(user_id, device_name=None):
     else:
         return Device.get(Device.user.id == user_id)
 
-def update_status(user_id, name, status):
-    user = User.get_user(user_id)
+def get_devices_by_user(user_id):
+    return Device.select().where(Device.user_id == user_id)
 
-    device = Device.get(Device.user == user and Device.name == name)
+def update_status(user_id, name, status):
+    device = Device.get(Device.user_id == user_id and Device.name == name)
     device.status = status
+
+    device.save()
+
+def update_is_on(user_id, name, state):
+    device = Device.get(Device.user_id == user_id and Device.name == name)
+    device.is_on = state
+
+    device.save()
+
+def update_telemetry_period(user_id, device_id, new_period):
+    device = Device.get(Device.user_id == user_id and Device.id == device_id)
+    device.telemetry_period = new_period
 
     device.save()

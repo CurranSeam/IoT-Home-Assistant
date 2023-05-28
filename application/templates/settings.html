@@ -70,7 +70,7 @@
                 <label for="message_cooloff">(seconds): &emsp;</label>
                 <input type="range" id="message_cooloff" name="message_cooloff" class="slider" min="15" max="180" step="15" value="{{ message_cooloff }}" style="width: 80px;">
                 &emsp;<b id="cooloff_text">{{ message_cooloff }}</b>
-                <button id="update" class="button-81" role="button" style="margin-left: 20px;" onclick="updateMessageCooloff()">Update</button>
+                <button id="update" class="button-81" role="button" style="margin-left: 20px;" onclick="updateMessageCooloff()">&#x2713;</button>
               </td>
             </tr>
           </tbody>
@@ -92,7 +92,7 @@
                 <label for="conf_threshold">(percentage): &emsp;</label>
                 <input type="range" id="conf_threshold" name="conf_threshold" class="slider" min="0.1" max="0.9" step="0.1" value="{{ min_conf }}" style="width: 80px;">
                 &emsp;<b id="conf_text">{{ min_conf }}</b>
-                <button id="update" class="button-81" role="button" style="margin-left: 20px;" onclick="updateMinConfidenceThreshold()">Update</button>
+                <button id="update" class="button-81" role="button" style="margin-left: 20px;" onclick="updateMinConfidenceThreshold()">&#x2713;</button>
               </td>
             </tr>
             <tr>
@@ -109,7 +109,7 @@
                         {% for cam_name, enabled in cams|zip_detection(cam_statuses) %}
                           <tr>
                             <td>{{ cam_name }}</td>
-                            <td>
+                            <td style="margin-left:50px; padding: 5px; float: left;">
                               <input type="checkbox" class="checkbox" detect_status="{{ cam_name }}" {% if enabled %}checked{% endif %} onclick="updateCamDetection(this)">
                             </td>
                           </tr>

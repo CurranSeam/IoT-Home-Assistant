@@ -4,9 +4,11 @@ import json
 
 from application import app
 from application import TFLite_detection_stream
+from application.services import mqtt
 from application.services import security as vault
 from application.services import svc_common
 from application.services import telegram
+from application.repository import device as Device
 from application.repository import user as User
 from flask import Response, request, make_response, render_template, jsonify
 
@@ -24,21 +26,67 @@ def index():
     return render_template("index.html")
 
 # -------------------------------------------------------------------------------------------------
+#DEVICES
+@app.route("/devices")
+def devices():
+    users = User.get_users_by_id_asc()
+    devices = {}
+
+    for user in users:
+        device_list = Device.get_devices_by_user(user.id)
+
+        data = []
+        if len(device_list) == 0:
+            data.append({
+                'name': "",
+                'state': False,
+                'tele_period': 0,
+                'id': None
+            })
+        else:
+            for d in device_list:
+                data.append({
+                    'name': d.name,
+                    'state': d.is_on,
+                    'tele_period': d.telemetry_period,
+                    'id': d.id
+                })
+
+        devices[user.first_name] = data
+
+    return render_template("devices.html", device_data=devices)
+
+@app.route('/devices/<int:device_id>/toggle')
+def toggle_device(device_id):
+    device = Device.get_device(id=device_id)
+    mqtt.power_toggle(device)
+
+    return jsonify({'success': True}), 200
+
+@app.route('/devices/<int:device_id>/telemetry-period', methods=["PUT"])
+def update_telemetry_period(device_id):
+    data = request.get_json()
+    new_period = int(data['new_period'])
+
+    device = Device.get_device(id=device_id)
+    mqtt.update_telemetry_period(device, new_period)
+
+    return jsonify({'success': True}), 200
+
+# -------------------------------------------------------------------------------------------------
 # SETTINGS
-# Define the custom Jinja filter
+
+# Define the custom Jinja filters
 @app.template_filter()
 def zip_lists(a, b, c, d):
     return zip(a, b, c, d)
 
-# Register the custom filter with Jinja
-app.jinja_env.filters['zip'] = zip_lists
-
-# Define the custom Jinja filter
 @app.template_filter()
 def zip_lists_detection(a, b):
     return zip(a, b)
 
-# Register the custom filter with Jinja
+# Register the custom filters with Jinja
+app.jinja_env.filters['zip'] = zip_lists
 app.jinja_env.filters['zip_detection'] = zip_lists_detection
 
 @app.route("/settings")

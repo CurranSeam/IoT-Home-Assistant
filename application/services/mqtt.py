@@ -32,12 +32,23 @@ def on_message(client, userdata, msg):
     device = Device.get_device_by_user(id, device_name)
 
     if cmd == "RESULT":
-        power = f'State: {json.loads(msg.payload)["POWER"]}'
-        status = device.status.split("\n\n")
-        status[0] = power
-        status = "\n\n".join(status)
+        payload = json.loads(msg.payload)
 
-        Device.update_status(user_id, device_name, status)
+        if 'POWER' in payload:
+            reading = payload['POWER']
+            power = f'State: {reading}'
+
+            status = device.status.split("\n\n")
+            status[0] = power
+            status = "\n\n".join(status)
+
+            if reading.lower().strip() == "on":
+                Device.update_is_on(user_id, device_name, True)
+            else:
+                Device.update_is_on(user_id, device_name, False)
+
+            # Update device's status with the power state
+            Device.update_status(user_id, device_name, status)
 
     elif cmd == "SENSOR":
         readings = json.loads(msg.payload)["ENERGY"]
@@ -72,3 +83,10 @@ def power_toggle(device):
     topic_name = device.name
     power_cmd = f'{device.user.id}/cmnd/{topic_name}/POWER'
     _client.publish(power_cmd, "TOGGLE")
+
+def update_telemetry_period(device, new_period):
+    topic_name = device.name
+    power_cmd = f'{device.user.id}/cmnd/{topic_name}/TelePeriod'
+    _client.publish(power_cmd, new_period)
+
+    Device.update_telemetry_period(device.user_id, device.id, new_period)

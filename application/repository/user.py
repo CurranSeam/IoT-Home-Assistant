@@ -51,7 +51,8 @@ def get_telegram_chat_ids(active=0):
     if active:
         users = users.where(User.telegram_notify == 1)
 
-    return [user.telegram_chat_id for user in users]
+    return [user.telegram_chat_id for user in users
+            if user.telegram_chat_id is not None]
 
 def get_telegram_chat_id(first_name):
     return User.get(User.first_name == first_name).telegram_chat_id

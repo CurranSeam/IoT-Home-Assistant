@@ -1,6 +1,9 @@
 import time
 import datetime
+import ipaddress
 import json
+import requests
+import urllib.parse
 
 from application import app
 from application import TFLite_detection_stream
@@ -37,25 +40,17 @@ def devices():
         device_list = Device.get_devices_by_user(user.id)
 
         data = []
-        if len(device_list) == 0:
+        for d in device_list:
             data.append({
-                'name': "",
-                'state': False,
-                'tele_period': 0,
-                'id': None
+                'name': d.name,
+                'state': d.is_on,
+                'tele_period': d.telemetry_period,
+                'id': d.id
             })
-        else:
-            for d in device_list:
-                data.append({
-                    'name': d.name,
-                    'state': d.is_on,
-                    'tele_period': d.telemetry_period,
-                    'id': d.id
-                })
 
         devices[user.first_name] = data
 
-    return render_template("devices.html", device_data=devices)
+    return render_template("devices.html", users=users, device_data=devices)
 
 @app.route('/devices/<int:device_id>/toggle')
 def toggle_device(device_id):
@@ -74,6 +69,74 @@ def update_telemetry_period(device_id):
 
     return jsonify({'success': True}), 200
 
+@app.route('/devices/add-device', methods=["PUT"])
+def add_device():
+    data = request.get_json()
+    ip_address = data['ip_address']
+    device_name = data['device_name']
+
+    if ip_address == '' or device_name == '':
+        return jsonify({'error': "IP Address and Name fields are required"}), 400
+
+    # Specifies the Subnet that the incoming IP address must reside in.
+    # Matches on the first 16 bits of host IP address (i.e. xxx.xxx)
+    network = f'{vault.get_value("APP", "config", "host")[:8]}0.0/16'
+
+    try:
+        ip = ipaddress.ip_address(ip_address)
+        network = ipaddress.ip_network(network)
+
+        if ip in network:
+            url = f"http://{ip_address}"
+            try:
+                response = requests.get(url, timeout=3)
+
+                # Check if device on the network is a tasmota device
+                if response.status_code == 200 and "Tasmota" in response.text:
+                    user_id = data['user_id']
+                    user_firstname = data['user_firstname']
+                    device_full_topic = f'{user_id}/%prefix%/%topic%/'
+                    encoded_full_topic = urllib.parse.quote(device_full_topic, safe="")
+
+                    request_params = {"Topic" : device_name,
+                                    "FullTopic" : encoded_full_topic,
+                                    "MqttHost" : vault.get_value("APP", "config", "host")
+                                    }
+
+                    for cmd in request_params:
+                        payload = request_params[cmd]
+                        url = f'http://{ip_address}/cm?cmnd={cmd}%20{payload}'
+                        response = requests.get(url)
+                    
+                        if response.status_code != 200:
+                            return jsonify({'error': f'Failed to add {device_name} :O('}), response.status_code
+
+                    device = Device.add_device(user_id, device_name)
+                    mqtt.subscribe(device)
+                    mqtt.write_power_state(device)
+
+                    return jsonify({'success': f'{device_name} successfully added for {user_firstname} :O)'}), 200
+            except requests.exceptions.RequestException:
+                return jsonify({'error': f'{device_name} is unreachable :O('}), 400
+
+            return jsonify({'error': f'{device_name} is not a Tasmota device :O('}), 400
+        else:
+            return jsonify({'error': f'{ip_address} is not on the LAN :O('}), 400
+
+    except ValueError:
+        return jsonify({'error': f'{ip_address} is an invalid IP address :O('}), 400
+
+@app.route('/devices/delete-device', methods=["PUT"])
+def delete_device():
+    data = request.get_json()
+    device_id = data['device_id']
+    user_firstname = data['user_firstname']
+    device = Device.get_device(id=device_id)
+
+    mqtt.unsubscribe(device)
+    Device.delete_device(device_id)
+
+    return jsonify({'success': f'{device.name} successfully deleted for {user_firstname} :O)'}), 200
 # -------------------------------------------------------------------------------------------------
 # REMINDERS
 

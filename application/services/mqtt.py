@@ -7,7 +7,7 @@ import paho.mqtt.client as mqtt
 from application.services import security as vault
 from application.utils.exception_handler import try_exec
 
-_client = mqtt.Client("RPI")
+__client = mqtt.Client("RPI")
 
 _sensor_data = {"voltage" : "V",
                 "current" : "A",
@@ -21,15 +21,11 @@ def on_connect(client, userdata, flags, rc):
     logging.info("MQTT client connected...")
 
     for device in Device.get_devices():
-        # Subscribe to sensor telemetry for all devices
-        client.subscribe(f'{device.user.id}/tele/{device.name}/SENSOR')
-
-        # Subscribe to power state dump for all devices
-        client.subscribe(f'{device.user.id}/stat/{device.name}/RESULT')
+        subscribe(device)
 
 def on_message(client, userdata, msg):
     user_id, _, device_name, cmd = msg.topic.split("/")
-    device = Device.get_device_by_user(id, device_name)
+    device = Device.get_device_by_user(user_id, device_name)
 
     if cmd == "RESULT":
         payload = json.loads(msg.payload)
@@ -64,29 +60,54 @@ def on_message(client, userdata, msg):
 
 # Utility functions
 def start():
-    _client.on_connect = on_connect
-    _client.on_message = on_message
+    __client.on_connect = on_connect
+    __client.on_message = on_message
 
     host = vault.get_value("APP", "config", "host")
 
-    ret, _ = try_exec(_client.connect, host)
+    ret, _ = try_exec(__client.connect, host)
 
     if ret == 0:
-        _client.loop_start()
+        __client.loop_start()
 
 def stop():
-    _client.disconnect()
+    __client.disconnect()
     logging.info("MQTT client disconnected")
 
 # Device commands
+def subscribe(device):
+    __manage_subscriptions(device, "subscribe")
+
+def unsubscribe(device):
+    __manage_subscriptions(device, "unsubscribe")
+
 def power_toggle(device):
-    topic_name = device.name
-    power_cmd = f'{device.user.id}/cmnd/{topic_name}/POWER'
-    _client.publish(power_cmd, "TOGGLE")
+    __publish(device, "POWER", "TOGGLE")
+
+def write_power_state(device):
+    __publish(device, "POWER", "")
 
 def update_telemetry_period(device, new_period):
-    topic_name = device.name
-    power_cmd = f'{device.user.id}/cmnd/{topic_name}/TelePeriod'
-    _client.publish(power_cmd, new_period)
+    __publish(device, "TelePeriod", new_period)
 
     Device.update_telemetry_period(device.user_id, device.id, new_period)
+
+def __publish(device, cmd, payload):
+    topic_name = device.name
+    power_cmd = f'{device.user.id}/cmnd/{topic_name}/{cmd}'
+    __client.publish(power_cmd, payload)
+
+def __manage_subscriptions(device, action):
+    # Sensor telemetry topic
+    tele_topic = f'{device.user.id}/tele/{device.name}/SENSOR'
+
+    # Topic that contains power state dump and other info
+    result_topic = f'{device.user.id}/stat/{device.name}/RESULT'
+
+    topics = [(tele_topic, 0), (result_topic, 0)]
+
+    if action.lower() == "subscribe":
+        __client.subscribe(topics)
+    else:
+        for topic, _ in topics:
+            __client.unsubscribe(topic)

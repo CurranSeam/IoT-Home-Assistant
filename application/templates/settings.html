@@ -65,12 +65,12 @@
           </tr>
           <tbody>
             <tr>
-              <td>Message Cool-Off<br>(Delay between consecutive messages)</td>
+              <td>Message Cool-Off<br>(Seconds between consecutive messages)</td>
               <td>
-                <label for="message_cooloff">(seconds): &emsp;</label>
+                <label for="message_cooloff"></label>
                 <input type="range" id="message_cooloff" name="message_cooloff" class="slider" min="15" max="180" step="15" value="{{ message_cooloff }}" style="width: 80px;">
                 &emsp;<b id="cooloff_text">{{ message_cooloff }}</b>
-                <button id="update" class="button-81" role="button" style="margin-left: 20px;" onclick="updateMessageCooloff()">&#x2713;</button>
+                <button id="update" class="button-81" role="button" style="margin-left: 10px;" onclick="updateMessageCooloff()">&#x2713;</button>
               </td>
             </tr>
           </tbody>
@@ -87,16 +87,16 @@
           </tr>
           <tbody>
             <tr>
-              <td>Minimum Confidence Threshold<br>(Lowest confidence for detection results)</td>
+              <td>Minimum Confidence Threshold<br>(Lowest percentage for detection results)</td>
               <td>
-                <label for="conf_threshold">(percentage): &emsp;</label>
+                <label for="conf_threshold"></label>
                 <input type="range" id="conf_threshold" name="conf_threshold" class="slider" min="0.1" max="0.9" step="0.1" value="{{ min_conf }}" style="width: 80px;">
                 &emsp;<b id="conf_text">{{ min_conf }}</b>
-                <button id="update" class="button-81" role="button" style="margin-left: 20px;" onclick="updateMinConfidenceThreshold()">&#x2713;</button>
+                <button id="update" class="button-81" role="button" style="margin-left: 10px;" onclick="updateMinConfidenceThreshold()">&#x2713;</button>
               </td>
             </tr>
             <tr>
-              <td style="vertical-align:top;">Enable/Disable Detection<br>(Select cameras to run detection on)</td>
+              <td style="vertical-align:top;">Enable/Disable Detection<br>(Select cameras to run detection on)<br><br><b>Note:</b><br>Optimal performance is 3 cam max</td>
               <td>
                 <div id="tableContainer-1">
                   <div id="tableContainer-2">

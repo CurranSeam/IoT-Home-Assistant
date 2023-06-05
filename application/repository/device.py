@@ -43,6 +43,18 @@ def get_device_by_user(user_id, device_name=None):
 def get_devices_by_user(user_id):
     return Device.select().where(Device.user_id == user_id)
 
+def add_device(user_id, name):
+    user = User.get_user(id=user_id)
+    device = Device.create(user = user, name = name)
+
+    return device
+
+def delete_device(device_id):
+    device = Device.get(Device.id == device_id)
+    device.delete_instance()
+
+    return device
+
 def update_status(user_id, name, status):
     device = Device.get(Device.user_id == user_id and Device.name == name)
     device.status = status

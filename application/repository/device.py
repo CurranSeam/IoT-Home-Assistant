@@ -19,7 +19,7 @@ def get_device(id=None,
     non_null_count = sum(param is not None for param in params)
 
     if non_null_count != 1:
-        e = ValueError('application/repository/user.py: Exactly one parameter must be non-null')
+        e = ValueError('application/repository/device.py: Exactly one parameter must be non-null')
         log_exception(e)
         return None
 

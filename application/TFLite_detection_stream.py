@@ -176,5 +176,14 @@ def detection():
         if cv2.waitKey(1) == ord('q'):
             break
 
+def get_camera_data():
+    cameras_status = []
+    cameras = CAMERAS.keys()
+
+    for key in cameras:
+        cameras_status.append(CAMERAS.get(key)[2])
+
+    return cameras, cameras_status
+
 if __name__ == '__main__':
     pass

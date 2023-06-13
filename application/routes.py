@@ -203,16 +203,12 @@ app.jinja_env.filters['zip_detection'] = zip_lists_detection
 
 @app.route("/settings")
 def settings():
-    cameras_status = []
-    cameras = TFLite_detection_stream.CAMERAS.keys()
+    cameras, cameras_status = TFLite_detection_stream.get_camera_data()
 
     names = User.get_first_names()
     tg_status = User.get_telegram_notify()
     sms_status = User.get_sms_notify()
     numbers = [f'XXX-XXX-{str(num)[-4:]}' for num in User.get_phone_numbers()]
-
-    for key in cameras:
-        cameras_status.append(TFLite_detection_stream.CAMERAS.get(key)[2])
 
     cooloff = TFLite_detection_stream.message_cooloff.total_seconds()
     return render_template("settings.html", users=names, telegram_statuses=tg_status,
@@ -311,3 +307,17 @@ def get_stats():
 def get_bot_username():
     username = vault.get_value("APP", "config", "bot_username")
     return username
+
+@app.route("/get_camera_data/<string:cam>")
+def get_camera_data(cam):
+    cameras, cameras_status = TFLite_detection_stream.get_camera_data()
+    cameras = list(map(lambda x: x.replace(' ', '_'), cameras))
+
+    idx = cameras.index(cam)
+    detection = cameras_status[idx]
+
+    if detection == 0:
+        detection = "OFF"
+    else:
+        detection = "ON"
+    return jsonify({'success': detection}), 200

@@ -66,10 +66,19 @@
       <img id="feed" style="zoom: 135%;" src="{{ url_for('video_feed', cam='Driveway') }}" class = "marginauto" alt="centered image">
     </div>
 
+    <div id="detection-indicator" class="indicator">
+      <span id="detection-text">Detection: </span>
+      <span id="detection-state">-</span>
+    </div>
+
     <div style="text-align: center;" class = "marginauto">
-      <button id="next" class="button-81" role="button" style="transform: scale(1.5)" onclick="change_camera(); submitPoll();">Next Camera</button>
+      <button id="next" class="button-81" style="font-size: 1.5rem;" role="button" onclick="change_camera(); submitPoll(); getDetectionState()">Next Camera</button>
     </div>
   </div>
+
+  <br>
+  <br>
+  <br>
 
   <div id="footer"></div>
 
@@ -79,6 +88,34 @@
         $("#navbar").load("/static/navbar.html");
         $("#footer").load("/static/footer.html");
       });
+
+      window.onload = function() {
+        getDetectionState()
+      };
+
+      function getDetectionState() {
+        var url_split = document.getElementById("feed").src.split("/");
+        var cam = url_split[url_split.length - 2]
+
+        fetch('get_camera_data/' + cam)
+        .then((response) => {
+          return response.json();
+        })
+        .then((data) => {
+          var stateText = document.getElementById("detection-state");
+          stateText.innerText = data.success;
+
+          var indicator = document.getElementById("detection-indicator");
+
+          if (data.success === "ON") {
+            indicator.style.backgroundColor = "rgb(121, 196, 137)";
+            indicator.style.color = "white";
+          } else {
+            indicator.style.backgroundColor = "#F2F2F2";
+            indicator.style.color = "black";
+          }
+        })
+      }
   </script>
 
 </body>

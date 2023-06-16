@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
+    <meta http-equiv="Pragma" content="no-cache"/>
+    <meta http-equiv="Expires" content="0"/>
+
+    <title>SeamNet - Reminders</title>
+
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js" integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy" crossorigin="anonymous"></script>
+
+    <link rel="stylesheet" href="../static/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+  </head>
+
+  <body>
+    <div id="navbar"></div>
+
+    <div>
+        <h1 class="h1">Reminders</h1>
+    </div>
+
+    <div id="tableContainer-1">
+        <div id="tableContainer-2">
+            <table class="user-table" style="margin-top: 50px; width: 80%; height: auto">
+                <tr>
+                    <th>User</th>
+                    <th>Title</th>
+                    <th>Date</th>
+                    <th>Time</th>
+                    <th>Recurrence</th>
+                    <th>Description</th>
+                    <th></th>
+                </tr>
+                <tbody>
+                    {% for user in users %}
+                        {% set reminders = reminders_list[loop.index0] %}
+                        {% for reminder in reminders %}
+                            <tr>
+                                <td>{{ user.first_name if loop.index == 1 else '' }}</td>
+                                <td>{{ reminder.title }}</td>
+                                <td>{{ reminder.datetime.date() }}</td>
+                                <td>{{ reminder.datetime.time() }}</td>
+                                <td>{{ reminder.recurrence }}</td>
+                                <td>{{ reminder.description }}</td>
+                                <td>
+                                    <button id="delete" class="button-81" role="button" reminder_id="{{ reminder.id }}" user_firstname="{{ user.first_name }}" style="margin-left: 10px; background-color: rgb(251, 71, 110);" onclick="deleteReminder(this)">
+                                        <i class="fas fa-trash-alt"></i> <!-- trash can icon -->
+                                    </button>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <br>
+    <br>
+    <br>
+
+    <div>
+      <h1 class="h1">Add a Reminder</h1>
+    </div>
+
+    <div id="tableContainer-1">
+        <div id="tableContainer-2">
+            <table id="createReminderTable" class="user-table" style="margin-top: 50px; width: 80%; height: auto">
+                <tr>
+                    <th>User</th>
+                    <th>Reminder Title</th>
+                    <th>Date</th>
+                    <th>Time</th>
+                    <th>Recurrence</th>
+                    <th>Description</th>
+                </tr>
+                <tbody>
+                    <tr>
+                      <td>
+                        <select id="userDropDown">
+                          {% for user in users %}
+                            <option value="{{ user.id }}" first_name="{{ user.first_name }}">{{ user.first_name }}</option>
+                          {% endfor %}
+                        </select>
+                      </td>
+                      <td>
+                        <input type="text" id="titleInput" placeholder="Clean thermonuclear reactor" required>
+                      </td>
+                      <td>
+                        <input type="date" id="dateInput" required>
+                      </td>
+                      <td>
+                        <input type="time" id="timeInput" name="time" required>
+                      </td>
+                      <td>
+                        <select id="recurrenceDropDown" name="recurrence">
+                            <option value="none">None</option>
+                            <option value="daily">Daily</option>
+                            <option value="bi-weekly">Bi-Weekly</option>
+                            <option value="weekly">Weekly</option>
+                            <option value="monthly">Monthly</option>
+                            <option value="anually">Anually</option>
+                        </select>
+                      </td>
+                      <td>
+                        <input type="text" id="descriptionInput" placeholder="Dispose radioactive waste">
+                      </td>
+                    </tr>
+                    <tr>
+                      <td colspan="6">
+                        <button id="add" class="button-81" role="button" style="margin-left: 10px; width: 150px;" onclick="addReminder()">&#x2B;</button>
+                      </td>
+                    </tr>
+                  </tbody>
+            </table>
+        </div>
+    </div>
+
+    <br>
+    <br>
+    <br>
+
+    <div id="footer"></div>
+
+    <script>
+      // Load header and footer on page load
+      $(function(){
+          $("#navbar").load("/static/navbar.html");
+          $("#footer").load("/static/footer.html");
+        });
+    </script>
+
+    <div id="snackbar">Update successful :O)</div>
+
+    <script>
+        function addReminder() {
+            document.body.style.cursor = 'wait';
+
+            var reminderData = {
+              user_id: document.getElementById("userDropDown").value,
+              title: document.getElementById("titleInput").value,
+              date: document.getElementById("dateInput").value,
+              time: document.getElementById("timeInput").value,
+              recurrence: document.getElementById("recurrenceDropDown").value,
+              description: document.getElementById("descriptionInput").value
+            };
+
+            $.ajax({
+              url: '/reminders/add-reminder',
+              type: 'POST',
+              contentType: 'application/json',
+              data: JSON.stringify(reminderData),
+              success: function(response) {
+                const msg = response.success;
+                localStorage.setItem('reminderAddMessage', msg);
+                location.reload();
+              },
+              error: function(error) {
+                document.body.style.cursor = 'default';
+                updateSnackbar(error.responseJSON.error, "red")
+              }
+            });
+        }
+
+        function deleteReminder(button) {
+            var reminderData = {
+              reminder_id: button.getAttribute('reminder_id'),
+              user_firstname: button.getAttribute('user_firstname')
+            };
+
+            $.ajax({
+              url: '/reminders/delete-reminder',
+              type: 'POST',
+              contentType: 'application/json',
+              data: JSON.stringify(reminderData),
+              success: function(response) {
+                const msg = response.success;
+                localStorage.setItem('reminderDeleteMessage', msg);
+                location.reload();
+              },
+              error: function(error) {
+                document.body.style.cursor = 'default';
+                updateSnackbar(error.responseJSON.error, "red")
+              }
+            });
+        }
+
+        window.onload = function() {
+          document.body.style.cursor = 'default';
+          const reminderAddMessage = localStorage.getItem('reminderAddMessage');
+          const reminderDeleteMessage = localStorage.getItem('reminderDeleteMessage');
+
+          if (reminderAddMessage) {
+            updateSnackbar(reminderAddMessage, "rgb(121, 196, 137)");
+            localStorage.removeItem('reminderAddMessage');
+          } else if (reminderDeleteMessage) {
+            updateSnackbar(reminderDeleteMessage, "rgb(121, 196, 137)");
+            localStorage.removeItem('reminderDeleteMessage');
+          }
+        };
+
+      function updateSnackbar(message, color) {
+        var x = document.getElementById("snackbar");
+        x.innerHTML = message
+
+        x.style.backgroundColor = color;
+
+        // Add the "show" class to DIV
+        x.className = "show";
+
+        // After 3 seconds, remove the show class from DIV
+        setTimeout(function(){ x.className = x.className.replace("show", ""); }, 3000);
+      }
+
+    </script>
+
+  </body>
+</html>

@@ -155,7 +155,6 @@ if __name__ == "__main__":
 
     # Initialize cameras for detection
     for idx, cam_name in enumerate(TFLite_detection_stream.CAMERAS):
-        # print(cam_name)
         channel_str= "channel=" + str(idx + 1)
         stream = VideoStream(resolution=(TFLite_detection_stream.imW,TFLite_detection_stream.imH), framerate=30, stream_url=STREAM_URL.replace("channel=1", channel_str))
         TFLite_detection_stream.CAMERAS.update({cam_name:[stream.start(), None, 0]})

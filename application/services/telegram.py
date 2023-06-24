@@ -93,6 +93,21 @@ def send_opt_message(user, opt_in, service, settings_url):
 
     try_exec(__handle_error, response, sms_service.send_opt_message, user, opt_in, service)
 
+def send_reminder(user, message):
+    chat_id = User.get_telegram_chat_id(user)
+    modified_msg = "<strong>Reminder!</strong>\n\n" + message
+
+    params = {
+        'chat_id' : chat_id,
+        'text' : modified_msg,
+        'parse_mode' : "HTML"
+    }
+
+    response = request("post", "sendMessage", params)
+
+    recipient = User.get_phone_number(chat_id, 1)
+    try_exec(__handle_error, response, sms_service.send_message, message, recipient)
+
 def request(method, endpoint, params, files=None):
     """
     Function to make requests to Telegram's bot API.

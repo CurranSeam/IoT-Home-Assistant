@@ -5,15 +5,17 @@ import json
 import requests
 import urllib.parse
 
-from application import app
-from application import TFLite_detection_stream
-from application.services import mqtt
-from application.services import security as vault
-from application.services import svc_common
-from application.services import telegram
-from application.repository import device as Device
-from application.repository import reminder as Reminder
-from application.repository import user as User
+from application import (app,
+                         TFLite_detection_stream)
+from application.services import (mqtt,
+                                  scheduler,
+                                  security as vault,
+                                  svc_common,
+                                  telegram)
+from application.repository import (device as Device,
+                                    reminder as Reminder,
+                                    user as User)
+from application.utils.exception_handler import try_exec
 from flask import Response, request, make_response, render_template, jsonify
 
 # -------------------------------------------------------------------------------------------------
@@ -170,9 +172,15 @@ def add_reminder():
         # Combine date and time inputs into a datetime object
         datetime_str = f"{date} {time}"
         reminder_datetime = datetime.datetime.strptime(datetime_str, '%Y-%m-%d %H:%M')
-        Reminder.add_reminder(user, title, reminder_datetime, recurrence, description)
 
-        return jsonify({'success': 'Reminder created successfully'})
+        reminder = Reminder.add_reminder(user, title, reminder_datetime, recurrence, description)
+        ret, _ = try_exec(scheduler.schedule_reminder, reminder)
+
+        if not ret:
+            return jsonify({'success': 'Reminder created successfully'})
+
+        Reminder.delete_reminder(reminder.id)
+        return jsonify({'error': "Scheduling for the reminder was unsuccessful"}), 500
 
 @app.route('/reminders/delete-reminder', methods=["POST"])
 def delete_reminder():

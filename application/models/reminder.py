@@ -13,4 +13,4 @@ class Reminder(BaseModel):
     recurrence = CharField()
     description = TextField(null=True)
     created_at = DateTimeField(default=date_time.datetime.now)
-    user = ForeignKeyField(User, backref='reminders')
+    user = ForeignKeyField(User, backref='reminders', on_delete='CASCADE')

@@ -1,6 +1,25 @@
 from application.models.user import User
 from application.utils.exception_handler import log_exception
 
+def add_user(first_name,
+             phone_number,
+             username,
+             password,
+             sms_notify=1,
+             telegram_notify=1,
+             telegram_chat_id=None):
+    user = User.create(
+        first_name=first_name,
+        phone_number=phone_number,
+        username=username,
+        password=password,
+        sms_notify=sms_notify,
+        telegram_notify=telegram_notify,
+        telegram_chat_id=telegram_chat_id
+    )
+
+    return user
+
 def get_user(id=None,
              first_name=None,
              phone_number=None,

@@ -111,8 +111,29 @@ h1 {
   font-family: 'Segoe UI', monospace;
 }
 .marginauto {
-  margin: 50px auto 50px auto;
+  margin: 50px auto 20px auto;
   display: block;
+}
+.indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px;
+  background-color: #F2F2F2;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: bold;
+  text-align: center;
+  transition: background-color 0.3s ease;
+  width: fit-content;
+  margin: 0 auto;
+  transform: scale(1.1);
+}
+#detection-text {
+  margin-right: 5px;
+}
+#detection-state {
+  font-size: 18px;
 }
 
 /* FEED BUTTON */
@@ -141,6 +162,7 @@ h1 {
 .button-81:hover {
   background-color: #2e3f59;
   color: #fff;
+  transform: scale(1.2);
 }
 @media (min-width: 768px) {
   .button-81 {
@@ -162,7 +184,7 @@ h1 {
 }
 #tableContainer-1-small {
   height: 100%;
-  width: 80%;
+  width: 50%;
   display: table;
 }
 .user-table {

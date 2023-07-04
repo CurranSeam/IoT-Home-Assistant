@@ -45,6 +45,9 @@ def get_opt_message(user, opt_in, service, url=None):
 
     return text
 
+def get_reminder_message(reminder):
+    return """%s today at %s.\n\n%s"""%(reminder.title, reminder.datetime.time(), reminder.description)
+
 def get_active_users_value(field):
     values = []
 

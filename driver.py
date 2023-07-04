@@ -7,11 +7,12 @@ import numpy as np
 import threading
 import logging
 
-from application import app
-from application import TFLite_detection_stream
-from application.services import security as vault
-from application.services import telegram
-from application.services import mqtt
+from application import (app,
+                         TFLite_detection_stream)
+from application.services import (security as vault,
+                                  scheduler,
+                                  telegram,
+                                  mqtt)
 from application.services.video_stream import VideoStream
 from application.utils import websockets
 from logging.handlers import TimedRotatingFileHandler
@@ -170,6 +171,7 @@ if __name__ == "__main__":
     flask_thread.start()
 
     # start services
+    scheduler.start()
     websockets.start()
     mqtt.start()
     telegram.start_bot()

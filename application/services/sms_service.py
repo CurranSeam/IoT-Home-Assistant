@@ -23,7 +23,7 @@ def send_detection_message(camera, timestamp, telegram_chat_id=None):
 
     send_message(text, recipients=recipient)
 
-def send_message(text, img_filename=None, recipients=None):
+def send_message(text, recipients=None, img_filename=None):
     msg = MIMEMultipart()
     msg['Subject'] = "/"
     msg.attach(MIMEText(text))

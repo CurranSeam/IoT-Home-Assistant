@@ -28,6 +28,9 @@ def get_reminder(id=None, user=None):
 
     return reminder()
 
+def get_reminders():
+    return Reminder.select().order_by(Reminder.datetime)
+
 def get_reminders_by_user(user):
     return Reminder.select().where(Reminder.user == user)
 
@@ -45,5 +48,23 @@ def add_reminder(user_id, title, reminder_datetime, recurrence, description=None
 def delete_reminder(reminder_id):
     reminder = Reminder.get(Reminder.id == reminder_id)
     reminder.delete_instance()
+
+    return reminder
+
+def update_datetime(reminder, datetime):
+    reminder.datetime = datetime
+    reminder.save()
+
+    return reminder
+
+def update_recurrence(reminder, recurrence):
+    reminder.recurrence = recurrence
+    reminder.save()
+
+    return reminder
+
+def update_description(reminder, description):
+    reminder.description = description
+    reminder.save()
 
     return reminder

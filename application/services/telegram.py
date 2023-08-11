@@ -1,5 +1,6 @@
-import requests
+import hashlib
 import logging
+import requests
 
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (ApplicationBuilder, ContextTypes, CommandHandler,
@@ -9,17 +10,51 @@ from application.services import svc_common
 from application.services import security as vault
 from application.services import sms_service
 from application.services import mqtt
-from application.utils.exception_handler import try_exec
+from application.utils.exception_handler import try_exec, log_exception
 from application.repository import user as User
 from application.repository import device as Device
 
+from functools import wraps
+
+def restricted(func):
+    @wraps(func)
+    def wrapped(update, context, *args, **kwargs):
+        user_id = update.effective_user.id
+        if user_id not in User.get_telegram_chat_ids():
+            return
+        return func(update, context, *args, **kwargs)
+    return wrapped
+
 # Bot Commands
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    msg = svc_common.get_bot_greet_msg()
-    gif = open("application/static/waving_dog.gif", 'rb')
-    await context.bot.send_message(chat_id=update.effective_chat.id, text=msg)
-    await context.bot.send_animation(chat_id=update.effective_chat.id, animation=gif)
+    try:
+        params = update.message.text.split(" ")[1].split("-")
+        value = params[0]
+        hash_data = params[1]
 
+        tg_identity = vault.get_value_encrypted("APP", "config", "telegram_identity")
+        hash_object = hashlib.sha1(tg_identity)
+        hash_data_new = hash_object.hexdigest()
+
+        if (hash_data_new == hash_data):
+            if (value == "g"):
+                msg = svc_common.get_bot_greet_msg()
+                await context.bot.send_message(chat_id=update.effective_chat.id, text=msg)
+                return
+
+            msg = svc_common.get_bot_welcome_msg()
+            gif = open("application/static/waving_dog.gif", 'rb')
+
+            User.update_telegram_chat_id(value, update.effective_chat.id)
+
+            await context.bot.send_message(chat_id=update.effective_chat.id, text=msg)
+            await context.bot.send_animation(chat_id=update.effective_chat.id, animation=gif)
+    except Exception:
+        data = f'Error in /start command\nTelegram update: {update.message.from_user}'
+        log_exception(data)
+        return
+
+@restricted
 async def stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
     bot_msg = "<strong>" + svc_common.get_bot_stats_msg() + "</strong>"
     stats = svc_common.get_server_stats(False)
@@ -30,6 +65,7 @@ async def stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
                                   reply_to_message_id=update.message.message_id)
     await context.bot.send_message(chat_id=update.effective_chat.id, text=msg, parse_mode="HTML")
 
+@restricted
 async def toggle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await context.bot.sendMessage(chat_id=update.effective_chat.id,
                                   text=svc_common.get_bot_confirm_msg(),
@@ -37,6 +73,7 @@ async def toggle(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await __prompt_user_for_device(update, context, "toggle")
 
+@restricted
 async def status(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await context.bot.sendMessage(chat_id=update.effective_chat.id,
                                   text=svc_common.get_bot_confirm_msg(),
@@ -53,7 +90,7 @@ def start_bot():
 
     commands = [start, stats, toggle, status]
     for func in commands:
-        application.add_handler(CommandHandler(func.__name__, func, __white_listed_users()))
+        application.add_handler(CommandHandler(func.__name__, func))
 
     # Add the callback for device buttons
     application.add_handler(CallbackQueryHandler(__devices_button_cb))
@@ -63,7 +100,7 @@ def start_bot():
 def send_detection_message(camera, timestamp, feed_url, img_filename):
     file = {'photo' : open(img_filename, 'rb')}
     feed_url = f"<a href='{feed_url}'>Feed</a>"
-    text = svc_common.get_detection_message(camera, timestamp, feed_url);
+    text = svc_common.get_detection_message(camera, timestamp, feed_url)
     active_chat_ids = User.get_telegram_chat_ids(active=1)
 
     for chat_id in active_chat_ids:
@@ -77,24 +114,27 @@ def send_detection_message(camera, timestamp, feed_url, img_filename):
 
         try_exec(__handle_error, response, sms_service.send_detection_message, camera, timestamp, chat_id)
  
-def send_opt_message(user, opt_in, service, settings_url):
+def send_opt_message(user_id, user_first_name, opt_in, service, settings_url):
     settings_url = f"<a href='{settings_url}'>Settings</a>"
-    text = svc_common.get_opt_message(user, opt_in, service, settings_url)
+    text = svc_common.get_opt_message(user_first_name, opt_in, service, settings_url)
 
-    chat_id = User.get_telegram_chat_id(user)
+    chat_id = User.get_telegram_chat_id(user_id)
 
-    params = {
-        'chat_id' : chat_id,
-        'text' : text,
-        'parse_mode' : "HTML"
-    }
+    if chat_id:
+        params = {
+            'chat_id' : chat_id,
+            'text' : text,
+            'parse_mode' : "HTML"
+        }
 
-    response = request("post", "sendMessage", params)
+        response = request("post", "sendMessage", params)
+        try_exec(__handle_error, response, sms_service.send_opt_message, user_id, user_first_name, opt_in, service)
 
-    try_exec(__handle_error, response, sms_service.send_opt_message, user, opt_in, service)
+    else:
+        sms_service.send_opt_message(user_id, user_first_name, opt_in, service)
 
-def send_reminder(user, message):
-    chat_id = User.get_telegram_chat_id(user)
+def send_reminder(user_id, message):
+    chat_id = User.get_telegram_chat_id(user_id)
     modified_msg = "<strong>Reminder!</strong>\n\n" + message
 
     params = {
@@ -138,14 +178,6 @@ def __invalid_method(*_, **__):
     bad_request = requests.Response()
     bad_request.status_code = 400
     return bad_request
-
-def __white_listed_users():
-    wl_users = filters.User()
-    allowed_chat_ids = User.get_telegram_chat_ids()
-    for chat_id in allowed_chat_ids:
-        if chat_id is not None:
-            wl_users._add_chat_ids(chat_id)
-    return wl_users
 
 async def __prompt_user_for_device(update, context, action):
     user = User.get_user(telegram_chat_id=update.effective_chat.id)

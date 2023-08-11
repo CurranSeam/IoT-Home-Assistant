@@ -16,8 +16,8 @@ def get_detection_message(camera, timestamp, feed_url=None):
 
     return f"Person detected on {camera}\n\nat {str(timestamp)}\n\n{feed_str}"
 
-def get_bot_greet_msg():
-    return "Hi!\n\nI'm SeamBot, your home assistant.\n\nSee /help for a list of commands that I can respond to."
+def get_bot_welcome_msg():
+    return "Hi!\n\nI'm SeamBot, your home assistant.\n\nSetup is now complete. Head back to SeamNet settings to enable notifications."
 
 def get_bot_confirm_msg():
     # Sends a thumbs up emoji
@@ -28,6 +28,9 @@ def get_bot_forbidden_msg(user_id):
 
 def get_bot_stats_msg():
     return "Here are the stats for SeamNet:"
+
+def get_bot_greet_msg():
+    return "Kabira speaking..."
 
 def get_opt_message(user, opt_in, service, url=None):
     verbs = {

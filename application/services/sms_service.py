@@ -43,13 +43,14 @@ def send_message(text, recipients=None, img_filename=None):
     # Edge case causes crash if no active recipients.
     if len(recipients) > 0:
         try_exec(server.sendmail, email, recipients, msg.as_string())
+        server.close()
 
-def send_opt_message(user, opt_in, service):
+def send_opt_message(user_id, user_first_name, opt_in, service):
     """
     Sends an SMS message via a carrier through SMTP for opt-in/opt-out.
     """
-    text = svc_common.get_opt_message(user, opt_in, service)
-    recipient = User.get_phone_number(first_name=user)
+    text = svc_common.get_opt_message(user_first_name, opt_in, service)
+    recipient = User.get_phone_number(user_id=user_id)
 
     send_message(text, recipients=recipient)
 

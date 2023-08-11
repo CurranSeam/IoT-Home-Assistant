@@ -19,7 +19,6 @@ def start():
     scheduler.start()
 
 def schedule_reminder(reminder):
-    user = User.get_user(id=reminder.user_id)
     message = svc_common.get_reminder_message(reminder)
     recurrence = reminder.recurrence.lower()
 
@@ -30,17 +29,17 @@ def schedule_reminder(reminder):
 
     trigger_mapping = {
         'none': partial(scheduler.add_job, telegram.send_reminder, 'date',
-                        args=[user.first_name, message], run_date=reminder.datetime),
+                        args=[reminder.user_id, message], run_date=reminder.datetime),
         'daily': partial(scheduler.add_job, telegram.send_reminder,
-                         IntervalTrigger(days=1), args=[user.first_name, message]),
+                         IntervalTrigger(days=1), args=[reminder.user_id, message]),
         'bi-weekly': partial(scheduler.add_job, telegram.send_reminder,
-                             IntervalTrigger(weeks=2), args=[user.first_name, message]),
+                             IntervalTrigger(weeks=2), args=[reminder.user_id, message]),
         'weekly': partial(scheduler.add_job, telegram.send_reminder,
-                          IntervalTrigger(weeks=1), args=[user.first_name, message]),
+                          IntervalTrigger(weeks=1), args=[reminder.user_id, message]),
         'monthly': partial(scheduler.add_job, telegram.send_reminder,
-                           trigger({'months': 1}), args=[user.first_name, message]),
+                           trigger({'months': 1}), args=[reminder.user_id, message]),
         'annually': partial(scheduler.add_job, telegram.send_reminder,
-                            trigger({'years': 1}), args=[user.first_name, message])
+                            trigger({'years': 1}), args=[reminder.user_id, message])
     }
 
     schedule_job = trigger_mapping.get(recurrence)

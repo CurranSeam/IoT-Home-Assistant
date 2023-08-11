@@ -36,6 +36,9 @@ def get_value(env_var, key, field):
     
     return dec_val
 
+def get_value_encrypted(env_var, key, field):
+    return DISPATCHER.get(env_var.upper()).get(key).get(field)
+
 def get_keys(env_var, key=-1):
     """
     Reads from vault and returns env keys.

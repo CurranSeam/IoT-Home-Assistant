@@ -7,13 +7,13 @@ import numpy as np
 import threading
 import logging
 
-from application import (app,
-                         TFLite_detection_stream)
+from application import app
 from application.services import (security as vault,
                                   scheduler,
-                                  telegram,
                                   mqtt)
-from application.services.video_stream import VideoStream
+from application.services.telegram import telegram
+from application.services.video import object_detection
+from application.services.video.video_stream import VideoStream
 from application.utils import websockets
 from logging.handlers import TimedRotatingFileHandler
 
@@ -75,11 +75,11 @@ if __name__ == "__main__":
     STREAM_URL = args.streamurl
     GRAPH_NAME = args.graph
     LABELMAP_NAME = args.labels
-    TFLite_detection_stream.min_conf_threshold = float(args.threshold)
-    TFLite_detection_stream.resW, TFLite_detection_stream.resH = args.resolution.split('x')
-    TFLite_detection_stream.imW, TFLite_detection_stream.imH = int(TFLite_detection_stream.resW), int(TFLite_detection_stream.resH)
+    object_detection.min_conf_threshold = float(args.threshold)
+    object_detection.resW, object_detection.resH = args.resolution.split('x')
+    object_detection.imW, object_detection.imH = int(object_detection.resW), int(object_detection.resH)
     use_TPU = args.edgetpu
-    TFLite_detection_stream.FEED_URL = str(args.ip) + ":" + str(args.port)
+    object_detection.FEED_URL = str(args.ip) + ":" + str(args.port)
     CHANNELS = args.channels
 
     # Import TensorFlow libraries
@@ -102,66 +102,66 @@ if __name__ == "__main__":
             GRAPH_NAME = 'edgetpu.tflite'       
 
     # Get path to current working directory
-    TFLite_detection_stream.CWD_PATH = os.getcwd()
+    object_detection.CWD_PATH = os.getcwd()
 
     # Path to .tflite file, which contains the model that is used for object detection
-    PATH_TO_CKPT = os.path.join(TFLite_detection_stream.CWD_PATH,MODEL_NAME,GRAPH_NAME)
+    PATH_TO_CKPT = os.path.join(object_detection.CWD_PATH,MODEL_NAME,GRAPH_NAME)
 
     # Path to label map file
-    PATH_TO_LABELS = os.path.join(TFLite_detection_stream.CWD_PATH,MODEL_NAME,LABELMAP_NAME)
+    PATH_TO_LABELS = os.path.join(object_detection.CWD_PATH,MODEL_NAME,LABELMAP_NAME)
 
     # Load the label map
     with open(PATH_TO_LABELS, 'r') as f:
-        TFLite_detection_stream.labels = [line.strip() for line in f.readlines()]
+        object_detection.labels = [line.strip() for line in f.readlines()]
 
     # Have to do a weird fix for label map if using the COCO "starter model" from
     # https://www.tensorflow.org/lite/models/object_detection/overview
     # First label is '???', which has to be removed.
-    if TFLite_detection_stream.labels[0] == '???':
-        del(TFLite_detection_stream.labels[0])
+    if object_detection.labels[0] == '???':
+        del(object_detection.labels[0])
 
     # Load the Tensorflow Lite model.
     # If using Edge TPU, use special load_delegate argument
     if use_TPU:
-        TFLite_detection_stream.interpreter = Interpreter(model_path=PATH_TO_CKPT,
+        object_detection.interpreter = Interpreter(model_path=PATH_TO_CKPT,
                                 experimental_delegates=[load_delegate('libedgetpu.so.1.0')])
     else:
-        TFLite_detection_stream.interpreter = Interpreter(model_path=PATH_TO_CKPT)
+        object_detection.interpreter = Interpreter(model_path=PATH_TO_CKPT)
 
-    TFLite_detection_stream.interpreter.allocate_tensors()
+    object_detection.interpreter.allocate_tensors()
 
     # Get model details
-    TFLite_detection_stream.input_details = TFLite_detection_stream.interpreter.get_input_details()
-    TFLite_detection_stream.output_details = TFLite_detection_stream.interpreter.get_output_details()
-    TFLite_detection_stream.height = TFLite_detection_stream.input_details[0]['shape'][1]
-    TFLite_detection_stream.width = TFLite_detection_stream.input_details[0]['shape'][2]
+    object_detection.input_details = object_detection.interpreter.get_input_details()
+    object_detection.output_details = object_detection.interpreter.get_output_details()
+    object_detection.height = object_detection.input_details[0]['shape'][1]
+    object_detection.width = object_detection.input_details[0]['shape'][2]
 
-    TFLite_detection_stream.floating_model = (TFLite_detection_stream.input_details[0]['dtype'] == np.float32)
+    object_detection.floating_model = (object_detection.input_details[0]['dtype'] == np.float32)
 
-    TFLite_detection_stream.input_mean = 127.5
-    TFLite_detection_stream.input_std = 127.5
+    object_detection.input_mean = 127.5
+    object_detection.input_std = 127.5
 
     # Check output layer name to determine if this model was created with TF2 or TF1,
     # because outputs are ordered differently for TF2 and TF1 models
-    outname = TFLite_detection_stream.output_details[0]['name']
+    outname = object_detection.output_details[0]['name']
 
     if ('StatefulPartitionedCall' in outname): # This is a TF2 model
-        TFLite_detection_stream.boxes_idx, TFLite_detection_stream.classes_idx, TFLite_detection_stream.scores_idx = 1, 3, 0
+        object_detection.boxes_idx, object_detection.classes_idx, object_detection.scores_idx = 1, 3, 0
     else: # This is a TF1 model
-        TFLite_detection_stream.boxes_idx, TFLite_detection_stream.classes_idx, TFLite_detection_stream.scores_idx = 0, 1, 2
+        object_detection.boxes_idx, object_detection.classes_idx, object_detection.scores_idx = 0, 1, 2
 
     # Write network args to envs
     vault.put_value("APP", "config", "host", str(args.ip))
     vault.put_value("APP", "config", "port", str(args.port))
 
     # Initialize cameras for detection
-    for idx, cam_name in enumerate(TFLite_detection_stream.CAMERAS):
+    for idx, cam_name in enumerate(object_detection.CAMERAS):
         channel_str= "channel=" + str(idx + 1)
-        stream = VideoStream(resolution=(TFLite_detection_stream.imW,TFLite_detection_stream.imH), framerate=30, stream_url=STREAM_URL.replace("channel=1", channel_str))
-        TFLite_detection_stream.CAMERAS.update({cam_name:[stream.start(), None, 0]})
+        stream = VideoStream(resolution=(object_detection.imW,object_detection.imH), framerate=30, stream_url=STREAM_URL.replace("channel=1", channel_str))
+        object_detection.CAMERAS.update({cam_name:[stream.start(), None, 0]})
 
     # start a thread that will perform motion detection
-    t = threading.Thread(target=TFLite_detection_stream.detection)
+    t = threading.Thread(target=object_detection.detection)
     t.daemon = True
     t.start()
 
@@ -177,8 +177,8 @@ if __name__ == "__main__":
     telegram.start_bot()
 
     # Clean up
-    for cam in TFLite_detection_stream.CAMERAS:
-        TFLite_detection_stream.CAMERAS.get(cam)[0].stop()
+    for cam in object_detection.CAMERAS:
+        object_detection.CAMERAS.get(cam)[0].stop()
 
     logging.info("Camera streams exited")
 

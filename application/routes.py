@@ -6,26 +6,28 @@ import json
 import requests
 import urllib.parse
 
-from application import (app,
-                         TFLite_detection_stream)
+from application import app
 from application.services import (mqtt,
                                   scheduler,
                                   security as vault,
-                                  svc_common,
-                                  telegram)
+                                  svc_common)
 from application.repository import (device as Device,
                                     reminder as Reminder,
                                     user as User)
+from application.services.telegram import telegram
+from application.services.video import object_detection
 from application.utils.exception_handler import try_exec
 from flask import Response, request, make_response, render_template, jsonify
 
 @app.context_processor
-def inject_hash():
+def inject_shared_vars():
+    server = f"{vault.get_value('APP', 'config', 'moniker')}Net"
+
     tg_identity = vault.get_value_encrypted("APP", "config", "telegram_identity")
     hash_object = hashlib.sha1(tg_identity)
     hashed_data = hash_object.hexdigest()
 
-    return dict(hash=hashed_data)
+    return dict(hash=hashed_data, server=server)
 
 # -------------------------------------------------------------------------------------------------
 # HOME
@@ -183,9 +185,10 @@ def add_reminder():
         reminder_datetime = datetime.datetime.strptime(datetime_str, '%Y-%m-%d %H:%M')
 
         reminder = Reminder.add_reminder(user, title, reminder_datetime, recurrence, description)
-        ret, _ = try_exec(scheduler.schedule_reminder, reminder)
+        ret, job = try_exec(scheduler.schedule_reminder, reminder)
 
         if not ret:
+            Reminder.update_job_id(reminder, job.id)
             return jsonify({'success': 'Reminder created successfully'})
 
         Reminder.delete_reminder(reminder.id)
@@ -198,6 +201,7 @@ def delete_reminder():
     user_firstname = data['user_firstname']
     reminder = Reminder.get_reminder(id=reminder_id)
 
+    scheduler.delete_job(reminder.job_id)
     Reminder.delete_reminder(reminder_id)
 
     return jsonify({'success': f'{reminder.title} successfully deleted for {user_firstname} :O)'}), 200
@@ -220,7 +224,7 @@ app.jinja_env.filters['zip_detection'] = zip_lists_detection
 
 @app.route("/settings")
 def settings():
-    cameras, cameras_status = TFLite_detection_stream.get_camera_data()
+    cameras, cameras_status = object_detection.get_camera_data()
 
     names = User.get_first_names()
     ids = User.get_ids()
@@ -230,10 +234,10 @@ def settings():
     sms_status = User.get_sms_notify()
     numbers = [f'XXX-XXX-{str(num)[-4:]}' for num in User.get_phone_numbers()]
 
-    cooloff = TFLite_detection_stream.message_cooloff.total_seconds()
+    cooloff = object_detection.message_cooloff.total_seconds()
     return render_template("settings.html", users=names, ids=ids, telegram_statuses=tg_status,
                             chat_ids=tg_chat_ids, sms_statuses=sms_status, phone_nums=numbers,
-                            min_conf=TFLite_detection_stream.min_conf_threshold,
+                            min_conf=object_detection.min_conf_threshold,
                             message_cooloff=cooloff, cams=cameras, cam_statuses=cameras_status)
 
 @app.route('/users/<string:user_id>/<string:service>/notifications', methods=["PUT"])
@@ -241,7 +245,7 @@ def update_notification_status(user_id, service):
     data = request.get_json()
     notification_status = int(data['notification_status'])
     name = User.get_user(id=user_id).first_name
-    settings_url = TFLite_detection_stream.FEED_URL + "/settings"
+    settings_url = object_detection.FEED_URL + "/settings"
 
     if service.lower() == "telegram":
         User.update_telegram_notify(user_id, notification_status)
@@ -264,7 +268,7 @@ def update_notification_status(user_id, service):
 def update_min_conf_threshold():
     data = request.get_json()
     new_threshold = float(data['new_conf_threshold'])
-    TFLite_detection_stream.min_conf_threshold = new_threshold
+    object_detection.min_conf_threshold = new_threshold
 
     return jsonify({'success': True}), 200
 
@@ -273,7 +277,7 @@ def update_message_cooloff():
     data = request.get_json()
     cooloff_seconds = int(data['new_cooloff'])
     new_cooloff = datetime.timedelta(seconds=cooloff_seconds)
-    TFLite_detection_stream.message_cooloff = new_cooloff
+    object_detection.message_cooloff = new_cooloff
 
     return jsonify({'success': True}), 200
 
@@ -281,7 +285,7 @@ def update_message_cooloff():
 def update_cam_detection_status(cam):
     data = request.get_json()
     new_state = int(data['detection_state'])
-    TFLite_detection_stream.CAMERAS.get(cam)[2] = new_state
+    object_detection.CAMERAS.get(cam)[2] = new_state
 
     return jsonify({'success': True}), 200
 
@@ -291,7 +295,7 @@ def update_cam_detection_status(cam):
 def video_feed(cam):
 	# return the response generated along with the specific media
 	# type (mime type)
-    return Response(TFLite_detection_stream.generate_frame(cam),
+    return Response(object_detection.generate_frame(cam),
 		mimetype = "multipart/x-mixed-replace; boundary=frame")
 
 # -------------------------------------------------------------------------------------------------
@@ -332,7 +336,7 @@ def get_bot_username():
 
 @app.route("/get_camera_data/<string:cam>")
 def get_camera_data(cam):
-    cameras, cameras_status = TFLite_detection_stream.get_camera_data()
+    cameras, cameras_status = object_detection.get_camera_data()
     cameras = list(map(lambda x: x.replace(' ', '_'), cameras))
 
     idx = cameras.index(cam)

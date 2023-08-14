@@ -2,22 +2,25 @@ import psutil
 import time
 
 from application.services import security as vault
-from application import TFLite_detection_stream
+from application.services.video import object_detection
 
 START_TIME = time.time()
+
+MONIKER = vault.get_value("APP", "config", "moniker")
 
 def get_detection_message(camera, timestamp, feed_url=None):
     # Remove milliseconds for readability
     timestamp = timestamp.replace(microsecond=0)
 
     feed_str = {
-        None : "Visit SeamNet for live viewing.\n"
+        None : f"Visit {MONIKER}Net for live viewing.\n"
     }.get(feed_url, f"For live viewing, click here:\n{str(feed_url)}")
 
     return f"Person detected on {camera}\n\nat {str(timestamp)}\n\n{feed_str}"
 
 def get_bot_welcome_msg():
-    return "Hi!\n\nI'm SeamBot, your home assistant.\n\nSetup is now complete. Head back to SeamNet settings to enable notifications."
+    moniker = vault.get_value("APP", "config", "moniker")
+    return f"Hi!\n\nI'm {MONIKER}Bot, your home assistant.\n\nSetup is now complete. Head back to {MONIKER}Net settings to enable notifications."
 
 def get_bot_confirm_msg():
     # Sends a thumbs up emoji
@@ -27,10 +30,16 @@ def get_bot_forbidden_msg(user_id):
     return "Unauthorized. Bot access denied for user:{}.".format(user_id)
 
 def get_bot_stats_msg():
-    return "Here are the stats for SeamNet:"
+    return f"Here are the stats for {MONIKER}Net:"
 
 def get_bot_greet_msg():
     return "Kabira speaking..."
+
+def get_bot_morning_msg(user_first_name):
+    return f"Good Morning {user_first_name}! :O)"
+
+def get_bot_error_message():
+    return "Something went wrong :O(\nPlease try again."
 
 def get_opt_message(user, opt_in, service, url=None):
     verbs = {
@@ -43,8 +52,8 @@ def get_opt_message(user, opt_in, service, url=None):
     }.get(url, f"click here:\n{url}")
 
     text = """\
-    %s,\n\nYou have opted %s SeamNet's %s notifications.\n\nTo opt %s, %s
-    """%(user, verbs[0], service, verbs[1], opt_action)
+    %s,\n\nYou have opted %s %s %s notifications.\n\nTo opt %s, %s
+    """%(user, verbs[0], f"{MONIKER}Net's", service, verbs[1], opt_action)
 
     return text
 
@@ -83,7 +92,7 @@ def get_server_stats(show_fps=True):
 
     uptime = "%d days, %d hours, %d minutes, %d seconds" % (d[0],h[0],m[0], s)
 
-    fps = f"FPS: {str(int(TFLite_detection_stream.frame_rate_calc))}\n\n" if show_fps else ""
+    fps = f"FPS: {str(int(object_detection.frame_rate_calc))}\n\n" if show_fps else ""
     stats = """%sServer uptime: %s\n\nCPU temperature: %s °C\n\nMemory: %s\n\nDisk: %s
     """%(fps,
         str(uptime),

@@ -27,15 +27,23 @@
   </footer>
 
   <script>
-    function openTelegram() {
+    function openTelegram(userId) {
+      var hash = sessionStorage.getItem("hash")
+
       // Send an HTTP GET request to the backend for the Telegram bot's username
       fetch('/get_bot_username')
       .then(resp => resp.text())
       .then(data => {
         var bot_username = data.trim();
         var isMobile = /iPhone|iPad|iPod|Android|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-        var webUrl = `https://t.me/${bot_username}?start=start`
-        var appUrl = `tg://resolve?domain=${bot_username}&start=start`;
+
+        var webUrl = `https://t.me/${bot_username}?start=g-${hash}`
+        var appUrl = `tg://resolve?domain=${bot_username}&start=g-${hash}`;
+
+        if (userId != null) {
+          webUrl = `https://t.me/${bot_username}?start=${userId}-${hash}`
+          appUrl = `tg://resolve?domain=${bot_username}&start=${userId}-${hash}`;
+        }
 
         if (isMobile && navigator.userAgent.indexOf("Android") >= 0 && !window.location.hash) {
           setTimeout(function () {

@@ -10,6 +10,9 @@
     <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49" crossorigin="anonymous"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js" integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy" crossorigin="anonymous"></script>
+    <script type="text/javascript">
+      sessionStorage.setItem("hash", "{{ hash }}");
+    </script>
 
     <link rel="stylesheet" href="../static/styles.css">
   </head>
@@ -28,18 +31,18 @@
             <th>User</th>
             <th>Phone</th>
             <th>Telegram Notifications</th>
-            <th>SMS Notifications</th>
+            <th>SMS Notifications (backup)</th>
           </tr>
           <tbody>
-            {% for user, num, status1, status2 in users|zip(phone_nums, telegram_statuses, sms_statuses) %}
+            {% for user, id, num, status1, status2, chat_id in users|zip(ids, phone_nums, telegram_statuses, sms_statuses, chat_ids) %}
               <tr>
                 <td>{{ user }}</td>
                 <td>{{ num }}</td>
                 <td>
-                  <input type="checkbox" name="telegram_notifications" class="checkbox" data-user-id="{{ user }}" {% if status1 %}checked{% endif %} onclick="updateNotifications(this, 'Telegram')">
+                  <input type="checkbox" name="telegram_notifications" class="checkbox" first-name="{{ user }}" user-id="{{ id }}" chat-id="{{ chat_id }}" {% if status1 %}checked{% endif %} onclick="updateNotifications(this, 'Telegram')">
                 </td>
                 <td>
-                  <input type="checkbox" name="sms_notifications" class="checkbox" data-user-id="{{ user }}" {% if status2 %}checked{% endif %} onclick="updateNotifications(this, 'SMS')">
+                  <input type="checkbox" name="sms_notifications" class="checkbox" first-name="{{ user }}" user-id="{{ id }}" {% if status2 %}checked{% endif %} onclick="updateNotifications(this, 'SMS')">
                 </td>
               </tr>
             {% endfor %}
@@ -143,11 +146,21 @@
 
     <script>
       function updateNotifications(checkbox, service) {
-        // Get the user ID from the "data-user-id" attribute
-        var user = checkbox.getAttribute('data-user-id');
+        var user = checkbox.getAttribute('first-name');
+        var user_id= checkbox.getAttribute('user-id');
+        var chat_id = checkbox.getAttribute('chat-id');
+
+        if (service == "Telegram" && chat_id == 'None') {
+          checkbox.checked = false;
+          openTelegram(user_id)
+          setTimeout(function(){
+            window.location.reload();
+          }, 10000);
+          return;
+        }
 
         // Send an HTTP PUT request to the backend to update the user's notifications
-        fetch('/users/' + user + '/' + service + '/notifications', {
+        fetch('/users/' + user_id + '/' + service + '/notifications', {
           method: 'PUT',
           body: JSON.stringify({
             notification_status: checkbox.checked

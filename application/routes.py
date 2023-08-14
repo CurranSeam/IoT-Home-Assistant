@@ -1,3 +1,4 @@
+import hashlib
 import time
 import datetime
 import ipaddress
@@ -17,6 +18,14 @@ from application.repository import (device as Device,
                                     user as User)
 from application.utils.exception_handler import try_exec
 from flask import Response, request, make_response, render_template, jsonify
+
+@app.context_processor
+def inject_hash():
+    tg_identity = vault.get_value_encrypted("APP", "config", "telegram_identity")
+    hash_object = hashlib.sha1(tg_identity)
+    hashed_data = hash_object.hexdigest()
+
+    return dict(hash=hashed_data)
 
 # -------------------------------------------------------------------------------------------------
 # HOME
@@ -198,8 +207,8 @@ def delete_reminder():
 
 # Define the custom Jinja filters
 @app.template_filter()
-def zip_lists(a, b, c, d):
-    return zip(a, b, c, d)
+def zip_lists(a, b, c, d, e, f):
+    return zip(a, b, c, d, e, f)
 
 @app.template_filter()
 def zip_lists_detection(a, b):
@@ -214,34 +223,39 @@ def settings():
     cameras, cameras_status = TFLite_detection_stream.get_camera_data()
 
     names = User.get_first_names()
+    ids = User.get_ids()
+
+    tg_chat_ids = User.get_telegram_chat_ids()
     tg_status = User.get_telegram_notify()
     sms_status = User.get_sms_notify()
     numbers = [f'XXX-XXX-{str(num)[-4:]}' for num in User.get_phone_numbers()]
 
     cooloff = TFLite_detection_stream.message_cooloff.total_seconds()
-    return render_template("settings.html", users=names, telegram_statuses=tg_status,
-                            sms_statuses = sms_status, phone_nums=numbers,
+    return render_template("settings.html", users=names, ids=ids, telegram_statuses=tg_status,
+                            chat_ids=tg_chat_ids, sms_statuses=sms_status, phone_nums=numbers,
                             min_conf=TFLite_detection_stream.min_conf_threshold,
                             message_cooloff=cooloff, cams=cameras, cam_statuses=cameras_status)
 
-@app.route('/users/<string:user>/<string:service>/notifications', methods=["PUT"])
-def update_notification_status(user, service):
+@app.route('/users/<string:user_id>/<string:service>/notifications', methods=["PUT"])
+def update_notification_status(user_id, service):
     data = request.get_json()
     notification_status = int(data['notification_status'])
+    name = User.get_user(id=user_id).first_name
+    settings_url = TFLite_detection_stream.FEED_URL + "/settings"
 
     if service.lower() == "telegram":
-        User.update_telegram_notify(user, notification_status)
+        User.update_telegram_notify(user_id, notification_status)
     # sms
     else:
-        User.update_sms_notify(user, notification_status)
+        User.update_sms_notify(user_id, notification_status)
 
     # Send notification of status change
     if notification_status:
         # we are opting in to notifications
-        telegram.send_opt_message(user, True, service, TFLite_detection_stream.FEED_URL + "/settings")
+        telegram.send_opt_message(user_id, name, True, service, settings_url)
     else:
         # opted out
-        telegram.send_opt_message(user, False, service, TFLite_detection_stream.FEED_URL + "/settings")
+        telegram.send_opt_message(user_id, name, False, service, settings_url)
 
     # Return a response to the frontend
     return jsonify({'success': True}), 200

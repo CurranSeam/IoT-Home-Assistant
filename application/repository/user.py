@@ -6,7 +6,7 @@ def add_user(first_name,
              username,
              password,
              sms_notify=1,
-             telegram_notify=1,
+             telegram_notify=0,
              telegram_chat_id=None):
     user = User.create(
         first_name=first_name,
@@ -57,6 +57,11 @@ def get_users_by_id_asc():
     """
     return __get_users_order_by(User.id)
 
+def get_ids():
+    users = __get_users_order_by(User.id)
+
+    return [user.id for user in users]
+
 # Add param to indicate if ordering or not.
 def get_first_names():
     users = __get_users_order_by(User.id)
@@ -70,11 +75,10 @@ def get_telegram_chat_ids(active=0):
     if active:
         users = users.where(User.telegram_notify == 1)
 
-    return [user.telegram_chat_id for user in users
-            if user.telegram_chat_id is not None]
+    return [user.telegram_chat_id for user in users]
 
-def get_telegram_chat_id(first_name):
-    return User.get(User.first_name == first_name).telegram_chat_id
+def get_telegram_chat_id(user_id):
+    return User.get(User.id == user_id).telegram_chat_id
 
 # Add param to indicate if ordering or not.
 def get_telegram_notify():
@@ -88,9 +92,9 @@ def get_sms_notify():
 
     return [user.sms_notify for user in users]
 
-def get_phone_number(chat_id=None, active=0, first_name=None):
-    if first_name and not chat_id and not active:
-        return User.get(User.first_name == first_name).phone_number
+def get_phone_number(chat_id=None, active=0, user_id=None):
+    if user_id and not chat_id and not active:
+        return User.get(User.id == user_id).phone_number
     elif chat_id:
         return User.get(User.telegram_chat_id == chat_id and
                         User.sms_notify == active).phone_number
@@ -104,15 +108,21 @@ def get_phone_numbers(active=0):
 
     return [user.phone_number for user in users]
 
-def update_telegram_notify(first_name, status):
-    user = User.get(User.first_name == first_name)
+def update_telegram_notify(user_id, status):
+    user = User.get(User.id == user_id)
     user.telegram_notify = status
 
     user.save()
 
-def update_sms_notify(first_name, status):
-    user = User.get(User.first_name == first_name)
+def update_sms_notify(user_id, status):
+    user = User.get(User.id == user_id)
     user.sms_notify = status
+
+    user.save()
+
+def update_telegram_chat_id(user_id, chat_id):
+    user = User.get(User.id == user_id)
+    user.telegram_chat_id = chat_id
 
     user.save()
 

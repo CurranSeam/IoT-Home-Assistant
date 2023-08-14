@@ -18,9 +18,9 @@ from dateutil.relativedelta import relativedelta
 SENT_REMINDER = "placeholder"
 
 # Mock function for sending reminders
-def mock_send_reminder(user, message):
+def mock_send_reminder(_, message):
     global SENT_REMINDER
-    SENT_REMINDER = f"Reminder for {user}: {message}"
+    SENT_REMINDER = message
 
 @pytest.fixture(scope="session")
 def setup_scheduler():
@@ -38,7 +38,7 @@ def setup_scheduler():
 
     reminder = Reminder.add_reminder(
         user,
-        'Test Reminder',
+        'Evict Raju',
         datetime.datetime.now(),
         'none',
     )
@@ -59,7 +59,7 @@ def test_reminder_sending(setup_scheduler):
     scheduler.schedule_reminder(reminder)
     time.sleep(2)
 
-    assert SENT_REMINDER == f"Reminder for Baburao: Test Reminder today at {now.time()}.\n\nUthale"
+    assert SENT_REMINDER == f"Evict Raju today at {now.time()}.\n\nUthale"
 
 def test_reminder_preloading(setup_scheduler):
     reminder = setup_scheduler

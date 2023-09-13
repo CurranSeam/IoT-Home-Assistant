@@ -4,6 +4,7 @@ from application.utils.exception_handler import log_exception
 
 def get_device(id=None,
              name=None,
+             ip_address=None,
              user=None):
     """
     Returns a device based on a single given parameter.
@@ -14,7 +15,7 @@ def get_device(id=None,
     :param user: a User record.
     """
 
-    params = [id, name, user]
+    params = [id, name, ip_address, user]
 
     non_null_count = sum(param is not None for param in params)
 
@@ -26,6 +27,7 @@ def get_device(id=None,
     device = {
         id: lambda: Device.get(Device.id == id),
         name: lambda: Device.get(Device.name == name),
+        ip_address: lambda: Device.get(Device.ip_address == ip_address),
         user: lambda: Device.get(Device.user == user),
     }[next(filter(lambda param: param is not None, params))]
 
@@ -43,9 +45,12 @@ def get_device_by_user(user_id, device_name=None):
 def get_devices_by_user(user_id):
     return Device.select().where(Device.user_id == user_id)
 
-def add_device(user_id, name):
+def get_ip_addresses():
+    return [d.ip_address for d in get_devices()]
+
+def add_device(user_id, name, ip_address):
     user = User.get_user(id=user_id)
-    device = Device.create(user = user, name = name)
+    device = Device.create(user = user, name = name, ip_address = ip_address)
 
     return device
 

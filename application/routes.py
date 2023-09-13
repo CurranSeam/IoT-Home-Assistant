@@ -3,6 +3,7 @@ import time
 import datetime
 import ipaddress
 import json
+import os
 import requests
 import urllib.parse
 
@@ -63,7 +64,7 @@ def devices():
 
         devices[user.first_name] = data
 
-    return render_template("devices.html", users=users, device_data=devices)
+    return render_template("devices.html", users=users, device_data=devices, scanned_devices=[])
 
 @app.route('/devices/<int:device_id>/toggle')
 def toggle_device(device_id):
@@ -82,6 +83,15 @@ def update_telemetry_period(device_id):
 
     return jsonify({'success': True}), 200
 
+@app.route("/devices/scan")
+def scan():
+    new_scanned_devices = __scan_for_devices()
+
+    if len(new_scanned_devices) == 0:
+        return jsonify({'error': 'No devices found'})
+
+    return jsonify(new_scanned_devices)
+
 @app.route('/devices/add-device', methods=["PUT"])
 def add_device():
     data = request.get_json()
@@ -90,6 +100,9 @@ def add_device():
 
     if ip_address == '' or device_name == '':
         return jsonify({'error': "IP Address and Name fields are required"}), 400
+
+    if ip_address in Device.get_ip_addresses():
+        return jsonify({'error': "Device is already in use!"}), 400
 
     # Specifies the Subnet that the incoming IP address must reside in.
     # Matches on the first 16 bits of host IP address (i.e. xxx.xxx)
@@ -124,7 +137,7 @@ def add_device():
                         if response.status_code != 200:
                             return jsonify({'error': f'Failed to add {device_name} :O('}), response.status_code
 
-                    device = Device.add_device(user_id, device_name)
+                    device = Device.add_device(user_id, device_name, ip_address)
                     mqtt.subscribe(device)
                     mqtt.write_power_state(device)
 
@@ -150,6 +163,25 @@ def delete_device():
     Device.delete_device(device_id)
 
     return jsonify({'success': f'{device.name} successfully deleted for {user_firstname} :O)'}), 200
+
+def __scan_for_devices():
+    scan = []
+    device_ip_addresses = Device.get_ip_addresses()
+
+    for device in os.popen('arp -a'):
+        ip_address = device.split(" ")[1].replace('(','').replace(')','')
+
+        if ip_address not in device_ip_addresses:
+            url = f"http://{ip_address}"
+
+            try:
+                response = requests.get(url, timeout=0.5)
+                if response.status_code == 200 and "Tasmota" in response.text:
+                    scan.append(ip_address)
+            except requests.exceptions.RequestException:
+                pass
+
+    return scan
 # -------------------------------------------------------------------------------------------------
 # REMINDERS
 

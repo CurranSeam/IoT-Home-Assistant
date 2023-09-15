@@ -68,3 +68,9 @@ def update_description(reminder, description):
     reminder.save()
 
     return reminder
+
+def update_job_id(reminder, job_id):
+    reminder.job_id = job_id
+    reminder.save()
+
+    return reminder

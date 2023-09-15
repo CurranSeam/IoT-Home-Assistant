@@ -9,7 +9,7 @@ import cv2
 import threading
 import datetime
 
-from application.services import telegram
+from application.services.telegram import telegram
 
 # Global variables
 min_conf_threshold = 0
@@ -127,6 +127,11 @@ def detection():
             frames.append(pic)
 
         for idx, f in enumerate(frames):
+
+            # Check if a frame is actually captured. If not, skip iteration.
+            if f is None:
+                continue
+
             # Only do detection on selected cameras.
             if not CAMERAS.get(keys[idx])[2]:
                 continue

@@ -1,11 +1,13 @@
-import application.repository.device as Device
-import application.repository.user as User
+import application.repository.device as DeviceRepo
+import application.repository.temperature_sensor as TemperatureRepo
 import json
 import logging
 import paho.mqtt.client as mqtt
 
+from application.models.device import Device
+from application.models.sensor import TemperatureSensor
 from application.services import security as vault
-from application.utils.exception_handler import try_exec
+from application.utils.exception_handler import try_exec, log_exception
 
 __client = mqtt.Client("RPI")
 
@@ -20,12 +22,27 @@ _sensor_data = {"voltage" : "V",
 def on_connect(client, userdata, flags, rc):
     logging.info("MQTT client connected...")
 
-    for device in Device.get_devices():
+    for device in DeviceRepo.get_devices():
         subscribe(device)
 
+    for sensor in TemperatureRepo.get_sensors():
+        subscribe(sensor)
+
 def on_message(client, userdata, msg):
-    user_id, _, device_name, cmd = msg.topic.split("/")
-    device = Device.get_device_by_user(user_id, device_name)
+    component_data = msg.topic.split("/")[0]
+    component = component_data.split("_")[0]
+
+    if component == "devices":
+        parse_device_message(msg)
+
+    elif component == "sensors":
+        parse_sensor_message(msg)
+
+def parse_device_message(msg):
+    component_data, _, cmd = msg.topic.split("/")
+    _, component_id, _ = component_data.split("_")
+
+    device = DeviceRepo.get_device(id=component_id)
 
     if cmd == "RESULT":
         payload = json.loads(msg.payload)
@@ -39,12 +56,12 @@ def on_message(client, userdata, msg):
             status = "\n\n".join(status)
 
             if reading.lower().strip() == "on":
-                Device.update_is_on(user_id, device_name, True)
+                DeviceRepo.update_is_on(component_id, True)
             else:
-                Device.update_is_on(user_id, device_name, False)
+                DeviceRepo.update_is_on(component_id, False)
 
             # Update device's status with the power state
-            Device.update_status(user_id, device_name, status)
+            DeviceRepo.update_status(component_id, status)
 
     elif cmd == "SENSOR":
         readings = json.loads(msg.payload)["ENERGY"]
@@ -56,7 +73,22 @@ def on_message(client, userdata, msg):
                 status += f"{k}: {v} {electrical_unit}\n\n"
 
         # Update device's status
-        Device.update_status(user_id, device_name, status)
+        DeviceRepo.update_status(component_id, status)
+
+def parse_sensor_message(msg):
+    component_data, _ = msg.topic.split("/")
+    _, component_id, _ = component_data.split("_")
+
+    sensor = TemperatureRepo.get_sensor(id=component_id)
+    payload = json.loads(msg.payload)
+    temperature_data = payload["temperature:0"]
+
+    temperature = {
+        "F" : temperature_data["tF"],
+        "C" : temperature_data["tC"]
+    }.get(sensor.temp_unit)
+
+    TemperatureRepo.update_temperature(sensor, temperature)
 
 # Utility functions
 def start():
@@ -74,37 +106,58 @@ def stop():
     __client.disconnect()
     logging.info("MQTT client disconnected")
 
-# Device commands
-def subscribe(device):
-    __manage_subscriptions(device, "subscribe")
+# Component commands
+def subscribe(component):
+    __manage_subscriptions(component, "subscribe")
 
-def unsubscribe(device):
-    __manage_subscriptions(device, "unsubscribe")
+def unsubscribe(component):
+    __manage_subscriptions(component, "unsubscribe")
 
 def power_toggle(device):
     __publish(device, "POWER", "TOGGLE")
 
 def write_power_state(device):
-    __publish(device, "POWER", "")
+    __publish(device, "POWER")
 
 def update_telemetry_period(device, new_period):
     __publish(device, "TelePeriod", new_period)
 
-    Device.update_telemetry_period(device.user_id, device.id, new_period)
+    Device.update_telemetry_period(device.id, new_period)
 
-def __publish(device, cmd, payload):
-    topic_name = device.name
-    power_cmd = f'{device.user.id}/cmnd/{topic_name}/{cmd}'
-    __client.publish(power_cmd, payload)
+def update_sensor_temp(sensor):
+    __publish(sensor, payload="status_update")
 
-def __manage_subscriptions(device, action):
-    # Sensor telemetry topic
-    tele_topic = f'{device.user.id}/tele/{device.name}/SENSOR'
+def __publish(component, cmd="", payload=""):
+    message = ""
 
-    # Topic that contains power state dump and other info
-    result_topic = f'{device.user.id}/stat/{device.name}/RESULT'
+    if isinstance(component, Device):
+        message = f'devices_{component.id}_{component.name}/cmnd/{cmd}'
 
-    topics = [(tele_topic, 0), (result_topic, 0)]
+    elif isinstance(component, TemperatureSensor):
+        message = f'sensors_{component.id}_{component.name}/command'
+
+    __client.publish(message, payload)
+
+def __manage_subscriptions(component, action):
+    topics = []
+
+    if isinstance(component, Device):
+        # Sensor telemetry topic
+        tele_topic = f'devices_{component.id}_{component.name}/tele/SENSOR'
+
+        # Topic that contains power state dump and other info
+        result_topic = f'devices_{component.id}_{component.name}/stat/RESULT'
+
+        topics = [(tele_topic, 0), (result_topic, 0)]
+
+    elif isinstance(component, TemperatureSensor):
+        # Topic that contains device status as a response to
+        # when status_update is published on <...>/command
+        status_topic = f'sensors_{component.id}_{component.name}/status'
+        topics = [(status_topic, 0)]
+
+    else:
+        log_exception("MQTT __manage_subscriptions: Unsupported component type")
 
     if action.lower() == "subscribe":
         __client.subscribe(topics)

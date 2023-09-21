@@ -60,20 +60,20 @@ def delete_device(device_id):
 
     return device
 
-def update_status(user_id, name, status):
-    device = Device.get(Device.user_id == user_id and Device.name == name)
+def update_status(device_id, status):
+    device = Device.get(Device.id == device_id)
     device.status = status
 
     device.save()
 
-def update_is_on(user_id, name, state):
-    device = Device.get(Device.user_id == user_id and Device.name == name)
+def update_is_on(device_id, state):
+    device = Device.get(Device.id == device_id)
     device.is_on = state
 
     device.save()
 
-def update_telemetry_period(user_id, device_id, new_period):
-    device = Device.get(Device.user_id == user_id and Device.id == device_id)
+def update_telemetry_period(device_id, new_period):
+    device = Device.get(Device.id == device_id)
     device.telemetry_period = new_period
 
     device.save()

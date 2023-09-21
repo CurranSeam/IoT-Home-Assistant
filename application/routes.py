@@ -14,6 +14,7 @@ from application.services import (mqtt,
                                   svc_common)
 from application.repository import (device as Device,
                                     reminder as Reminder,
+                                    temperature_sensor as TemperatureSensor,
                                     user as User)
 from application.services.telegram import telegram
 from application.services.video import object_detection
@@ -32,6 +33,7 @@ def inject_shared_vars():
 
 # -------------------------------------------------------------------------------------------------
 # HOME
+
 @app.route("/")
 def index():
 	# return the rendered template
@@ -45,6 +47,7 @@ def index():
 
 # -------------------------------------------------------------------------------------------------
 #DEVICES
+
 @app.route("/devices")
 def devices():
     users = User.get_users_by_id_asc()
@@ -83,15 +86,6 @@ def update_telemetry_period(device_id):
 
     return jsonify({'success': True}), 200
 
-@app.route("/devices/scan")
-def scan():
-    new_scanned_devices = __scan_for_devices()
-
-    if len(new_scanned_devices) == 0:
-        return jsonify({'error': 'No devices found'})
-
-    return jsonify(new_scanned_devices)
-
 @app.route('/devices/add-device', methods=["PUT"])
 def add_device():
     data = request.get_json()
@@ -121,13 +115,17 @@ def add_device():
                 if response.status_code == 200 and "Tasmota" in response.text:
                     user_id = data['user_id']
                     user_firstname = data['user_firstname']
-                    device_full_topic = f'{user_id}/%prefix%/%topic%/'
+
+                    device = Device.add_device(user_id, device_name, ip_address)
+
+                    device_full_topic = f'devices_{device.id}_%topic%/%prefix%/'
                     encoded_full_topic = urllib.parse.quote(device_full_topic, safe="")
 
-                    request_params = {"Topic" : device_name,
-                                    "FullTopic" : encoded_full_topic,
-                                    "MqttHost" : vault.get_value("APP", "config", "host")
-                                    }
+                    request_params = {
+                        "Topic" : device.name,
+                        "FullTopic" : encoded_full_topic,
+                        "MqttHost" : vault.get_value("APP", "config", "host")
+                    }
 
                     for cmd in request_params:
                         payload = request_params[cmd]
@@ -135,9 +133,9 @@ def add_device():
                         response = requests.get(url)
                     
                         if response.status_code != 200:
+                            device = Device.delete_device(device.id)
                             return jsonify({'error': f'Failed to add {device_name} :O('}), response.status_code
 
-                    device = Device.add_device(user_id, device_name, ip_address)
                     mqtt.subscribe(device)
                     mqtt.write_power_state(device)
 
@@ -164,6 +162,15 @@ def delete_device():
 
     return jsonify({'success': f'{device.name} successfully deleted for {user_firstname} :O)'}), 200
 
+@app.route("/devices/scan")
+def device_scan():
+    new_scanned_devices = __scan_for_devices()
+
+    if len(new_scanned_devices) == 0:
+        return jsonify({'error': 'No devices found'})
+
+    return jsonify(new_scanned_devices)
+
 def __scan_for_devices():
     scan = []
     device_ip_addresses = Device.get_ip_addresses()
@@ -182,6 +189,160 @@ def __scan_for_devices():
                 pass
 
     return scan
+
+# -------------------------------------------------------------------------------------------------
+#SENSORS
+
+@app.route("/sensors")
+def sensors():
+    users = User.get_users_by_id_asc()
+    temp_sensors = {}
+
+    for user in users:
+        temp_sensor_list = TemperatureSensor.get_sensors_by_user(user.id)
+
+        data = []
+        for t in temp_sensor_list:
+            data.append({
+                'location': t.location,
+                'temperature': t.temperature,
+                'temp_unit': t.temp_unit,
+                'temp_delta_threshold': t.temp_delta_threshold,
+                'id': t.id
+            })
+
+        temp_sensors[user.first_name] = data
+
+    return render_template("sensors.html", users=users, sensor_data=temp_sensors, scanned_sensors=[])
+
+@app.route('/sensors/add', methods=["PUT"])
+def add_sensor():
+    data = request.get_json()
+    ip_address = data['ip_address']
+    location = data['location']
+
+    if ip_address == '' or location == '':
+        return jsonify({'error': "IP Address and location fields are required"}), 400
+
+    if ip_address in TemperatureSensor.get_ip_addresses():
+        return jsonify({'error': "Sensor is already in use!"}), 400
+
+    # Specifies the Subnet that the incoming IP address must reside in.
+    # Matches on the first 16 bits of host IP address (i.e. xxx.xxx)
+    network = f'{vault.get_value("APP", "config", "host")[:8]}0.0/16'
+
+    try:
+        ip = ipaddress.ip_address(ip_address)
+        network = ipaddress.ip_network(network)
+
+        if ip in network:
+            url = f"http://{ip_address}/shelly"
+            try:
+                response = requests.get(url, timeout=3)
+
+                if response.status_code == 200:
+                    sensor_name = response.json()["id"]
+                    user_id = data['user_id']
+                    user_firstname = data['user_firstname']
+
+                    sensor = TemperatureSensor.add_sensor(user_id, sensor_name, location, ip_address, "shelly")
+
+                    url = f"http://{ip_address}/rpc"
+                    mqtt_host = vault.get_value("APP", "config", "host")
+                    mqtt_port = vault.get_value("APP", "config", "mqtt_port")
+
+
+                    data = [
+                        {
+                            "id" : 1,
+                            "method" : "HT_UI.SetConfig",
+                            "params" : {
+                                "config" : {
+                                    "temperature_unit" : "F"
+                                }
+                            }
+                        },
+                        {
+                            "id" : 1,
+                            "method" :"Mqtt.SetConfig",
+                            "params" : {
+                                "config" : {
+                                    "enable" : True,
+                                    "server" : f"{mqtt_host}:{mqtt_port}",
+                                    "topic_prefix" : f"sensors_{sensor.id}_{sensor.name}"
+                                    }
+                            }
+                        },
+                        {
+                            "id" : 1,
+                            "method" : "Shelly.Reboot"
+                        }
+                    ]
+
+                    for idx, d in enumerate(data):
+                        response = requests.post(url, data=json.dumps(d))
+
+                        if response.status_code != 200:
+                            TemperatureSensor.delete_sensor(sensor.id)
+                            return jsonify({'error': f'Failed to add sensor :O('}), response.status_code
+
+                        # Subscribe to topics and update data before sensor is rebooted.
+                        if idx == len(data) - 1:
+                            mqtt.subscribe(sensor)
+                            mqtt.update_sensor_temp(sensor)
+
+                    return jsonify({'success': f'Sensor successfully added for {user_firstname} :O)'}), 200
+            except requests.exceptions.RequestException:
+                return jsonify({'error': f'Sensor is unreachable :O('}), 400
+
+            return jsonify({'error': f'Sensor is not a Shelly sensor :O('}), 400
+        else:
+            return jsonify({'error': f'{ip_address} is not on the LAN :O('}), 400
+
+    except ValueError:
+        return jsonify({'error': f'{ip_address} is an invalid IP address :O('}), 400
+
+@app.route('/sensors/delete', methods=["PUT"])
+def delete_sensor():
+    data = request.get_json()
+    sensor_id = data['sensor_id']
+    user_firstname = data['user_firstname']
+    temp_sensor = TemperatureSensor.get_sensor(id=sensor_id)
+
+    mqtt.unsubscribe(temp_sensor)
+    TemperatureSensor.delete_sensor(sensor_id)
+
+    return jsonify({'success': f'Sensor successfully deleted for {user_firstname} :O)'}), 200
+
+@app.route("/sensors/scan")
+def sensor_scan():
+    new_scanned_sensors = __scan_for_sensors()
+
+    if len(new_scanned_sensors) == 0:
+        return jsonify({'error': 'No sensor found'})
+
+    return jsonify(new_scanned_sensors)
+
+def __scan_for_sensors():
+    scan = []
+    sensor_ip_addresses = TemperatureSensor.get_ip_addresses()
+
+    for sensor in os.popen('arp -a'):
+        ip_address = sensor.split(" ")[1].replace('(','').replace(')','')
+
+        if ip_address not in sensor_ip_addresses:
+            url = f"http://{ip_address}/shelly"
+
+            try:
+                response = requests.get(url, timeout=0.5)
+
+                if response.status_code == 200:
+                    scan.append(ip_address)
+            except requests.exceptions.RequestException:
+                pass
+
+    return scan
+
 # -------------------------------------------------------------------------------------------------
 # REMINDERS
 

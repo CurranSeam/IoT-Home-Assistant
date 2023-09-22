@@ -75,6 +75,11 @@
         <table class="user-table" style="margin-top: 50px; width: 80%; height: auto">
           <tr>
             <th>User</th>
+            <th>Search
+              <button id="scan" class="button-81" role="button" style="margin: 0px 0px 0px 0px; transform: scale(0.6);" onclick="scan()">
+                <i class="fas fa-search"></i>
+              </button>
+            </th>
             <th>IP Address</th>
             <th>Name</th>
           </tr>
@@ -89,8 +94,15 @@
                 </select>
               </td>
               <td>
+                <select id="deviceDropDown" onclick="populateIpAddress()" onchange="populateIpAddress()">
+                  <option value="--select--" selected="selected">--select--</option>
+                  {% for ip in scanned_devices %}
+                    <option value="{{ ip }}">{{ ip }}</option>
+                  {% endfor %}
+                </select>
+              </td>
+              <td>
                 <input type="text" id="ipAddressInput" pattern="\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}" placeholder="x.x.x.x" required>
-                <span class="info" style="color: rgb(106, 173, 255)">(Plug IP)</span>
               </td>
               <td>
                 <input type="text" id="nameInput" pattern="[A-Za-z]+" placeholder="Thermonuclear reactor" required>
@@ -98,7 +110,7 @@
               </td>
             </tr>
             <tr>
-              <td colspan="3">
+              <td colspan="4">
                 <button id="add" class="button-81" role="button" style="margin-left: 10px; width: 150px;" onclick="addDevice()">&#x2B;</button>
               </td>
             </tr>
@@ -169,6 +181,14 @@
           // Handle any errors
           updateSnackbar(error, "red")
         });
+      }
+
+      function populateIpAddress() {
+        var scanned_ip = document.getElementById("deviceDropDown").value;
+
+        if (scanned_ip != "--select--") {
+          document.getElementById("ipAddressInput").value = scanned_ip;
+        }
       }
 
       function addDevice() {
@@ -251,6 +271,29 @@
         })
         .catch((error) => {
           updateSnackbar(error, "red")
+        });
+      }
+
+      function scan() {
+        document.getElementById("scan").disabled = true;
+        document.body.style.cursor = 'wait';
+
+        $.getJSON("/devices/scan", function(response){
+          if (!response.error) {
+            var dropdown = $("#deviceDropDown");
+            dropdown.empty();
+
+            $.each(response.devices, function(key, value) {
+              dropdown.append($("<option></option>").attr("value", value).text(value));
+            });
+            populateIpAddress();
+
+          } else {
+            updateSnackbar(response.error, "coral")
+          }
+
+          document.body.style.cursor = 'default';
+          document.getElementById("scan").disabled = false;
         });
       }
 

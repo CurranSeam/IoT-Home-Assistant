@@ -45,7 +45,8 @@ def start_bot():
 
     # Add the callbacks for buttons
     application.add_handler(CallbackQueryHandler(device.button_cb, pattern='^device_'))
-    application.add_handler(CallbackQueryHandler(Trivia.button_cb, pattern='^trivia_'))
+    application.add_handler(CallbackQueryHandler(Trivia.multiple_choice_buttons_cb, pattern='^trivia_'))
+    application.add_handler(CallbackQueryHandler(Trivia.configuration_buttons_cb, pattern='^trivia-'))
 
     application.run_polling()
 

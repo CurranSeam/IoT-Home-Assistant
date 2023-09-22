@@ -62,8 +62,8 @@ async def status(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await Device.status(update, context)
 
 @restricted
-async def trivia(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await Trivia.start(update, context)
+async def trivia(update: Update, _):
+    await Trivia.start(update)
 
 @restricted
 async def server(update: Update, context: ContextTypes.DEFAULT_TYPE):

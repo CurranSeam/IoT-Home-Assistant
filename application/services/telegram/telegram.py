@@ -27,6 +27,7 @@ def start_bot():
 
     # Add new bot commands here
     commands = {
+        dispatcher.start : "Introduction and greeting",
         dispatcher.server : f"Get {moniker}Net server stats",
         dispatcher.toggle : "Toggle your device power",
         dispatcher.status : "Get your device status",

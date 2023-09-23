@@ -6,13 +6,14 @@
   <meta http-equiv="Expires" content="0"/>
 
   <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.3.0/css/all.min.css">
 
   <script src="http://code.jquery.com/jquery-2.1.4.min.js"></script>
   <script>
     $(function(){
         $('a').each(function(){
             if ($(this).prop('href') == window.location.href) {
-                $(this).addClass('active'); $(this).parents('li').addClass('active');
+                $(this).addClass('active');
             }
         });
     });
@@ -22,15 +23,28 @@
   <!-- Header -->
   <header class="header">
     <img src="https://media.istockphoto.com/vectors/cute-smiling-robot-chat-bot-say-hivector-modern-flat-cartoon-voice-vector-id1073076312?k=6&m=1073076312&s=612x612&w=0&h=bx1_BlqwV32YaMHEw0gvlG7wmwAM00I1t4kSD4FKcck=" class="logo">
-    <nav>
-      <ul>
-        <li><a href="/" id="home-link">Home</a></li>
-        <li><a href="stats" id="stats-link">Stats</a></li>
-        <li><a href="devices" id="devices-link">Devices</a></li>
-        <li><a href="reminders" id="reminders-link">Reminders</a></li>
-        <li><a href="settings" id="settings-link">Settings</a></li>
-      </ul>
-    </nav>
+    <div class="nav">
+      <a href="/">Home</a>
+      <a href="stats">Stats</a>
+      <a href="reminders">Reminders</a>
+
+      <div class="dropdown">
+        <button class="dropbtn">
+          <a>
+            Automation
+            <i class="fa fa-caret-down"></i>
+          </a>
+        </button>
+        <div class="dropdown-content">
+          <a href="devices">Devices</a>
+          <a href="sensors">Sensors</a>
+        </div>
+      </div>
+
+      <div class="nav-right">
+        <a href="settings" class="setting-icon" style="color:coral;"><i class="fas fa-user-cog"></i></a>
+      </div>
+    </div>
   </header>
 
 </body>

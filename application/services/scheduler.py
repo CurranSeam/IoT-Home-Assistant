@@ -1,12 +1,11 @@
 import application.repository.reminder as Reminder
-import application.repository.user as User
 
 from application.services import svc_common
 from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.schedulers.base import JobLookupError
 from apscheduler.triggers.cron import CronTrigger
 from apscheduler.triggers.interval import IntervalTrigger
 
-from dateutil.relativedelta import relativedelta
 from functools import partial
 
 from application.services.telegram import telegram
@@ -69,7 +68,10 @@ def schedule_morning_message():
     return scheduler.add_job(telegram.send_morning_message, __set_cron(hour=9, minute=0))
 
 def delete_job(job_id):
-    scheduler.remove_job(job_id)
+    try:
+        scheduler.remove_job(job_id)
+    except JobLookupError:
+        pass
 
 def __set_cron(year="*", month="*", day="*",
                hour="*", minute="*", second="0"):

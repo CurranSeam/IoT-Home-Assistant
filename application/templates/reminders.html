@@ -162,6 +162,9 @@
               error: function(error) {
                 document.body.style.cursor = 'default';
                 updateSnackbar(error.responseJSON.error, "red")
+              },
+              complete: function() {
+                document.body.style.cursor = 'default';
               }
             });
         }
@@ -190,7 +193,6 @@
         }
 
         window.onload = function() {
-          document.body.style.cursor = 'default';
           const reminderAddMessage = localStorage.getItem('reminderAddMessage');
           const reminderDeleteMessage = localStorage.getItem('reminderDeleteMessage');
 

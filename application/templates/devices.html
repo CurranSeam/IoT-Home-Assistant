@@ -202,7 +202,7 @@
         var name = document.getElementById("nameInput").value;
 
         // Send an HTTP PUT request to the backend to add the device for the user
-        fetch('/devices/add-device', {
+        fetch('/devices/add', {
           method: 'PUT',
           body: JSON.stringify({
             user_id: user_id,
@@ -236,6 +236,9 @@
 
           document.body.style.cursor = 'default';
           updateSnackbar(error, "red")
+        })
+        .finally(() => {
+          document.body.style.cursor = 'default';
         });
       }
 
@@ -245,7 +248,7 @@
         var user_firstname = button.getAttribute('user_firstname')
 
         // Send an HTTP PUT request to the backend to delete the device for the user
-        fetch('/devices/delete-device', {
+        fetch('/devices/delete', {
           method: 'PUT',
           body: JSON.stringify({
             device_id: device_id,
@@ -299,7 +302,6 @@
 
       // After page is refreshed show device snackbar info
       window.onload = function() {
-        document.body.style.cursor = 'default';
         const deviceAddMessage = localStorage.getItem('deviceAddMessage');
         const deviceDeleteMessage = localStorage.getItem('deviceDeleteMessage');
 

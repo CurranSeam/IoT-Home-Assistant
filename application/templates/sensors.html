@@ -178,6 +178,9 @@
 
           document.body.style.cursor = 'default';
           updateSnackbar(error, "red")
+        })
+        .finally(() => {
+          document.body.style.cursor = 'default';
         });
       }
 
@@ -248,7 +251,6 @@
 
       // After page is refreshed show sensor snackbar info
       window.onload = function() {
-        document.body.style.cursor = 'default';
         const sensorAddMessage = localStorage.getItem('sensorAddMessage');
         const sensorDeleteMessage = localStorage.getItem('sensorDeleteMessage');
 

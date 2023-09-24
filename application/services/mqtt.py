@@ -122,7 +122,7 @@ def write_power_state(device):
 def update_telemetry_period(device, new_period):
     __publish(device, "TelePeriod", new_period)
 
-    Device.update_telemetry_period(device.id, new_period)
+    DeviceRepo.update_telemetry_period(device.id, new_period)
 
 def update_sensor_temp(sensor):
     __publish(sensor, payload="status_update")

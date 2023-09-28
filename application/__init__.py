@@ -40,6 +40,7 @@ from application.routes import sensors
 from application.routes import reminders
 from application.routes import settings
 from application.routes import stats
+from application.routes import scenes
 
 app.register_blueprint(home.bp)
 app.register_blueprint(devices.bp)
@@ -47,6 +48,7 @@ app.register_blueprint(sensors.bp)
 app.register_blueprint(reminders.bp)
 app.register_blueprint(settings.bp)
 app.register_blueprint(stats.bp)
+app.register_blueprint(scenes.bp)
 
 @app.context_processor
 def inject_shared_vars():

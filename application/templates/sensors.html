@@ -44,7 +44,7 @@
                         <td>{{ sensor['temp_unit'] }}</td>
                         <td>{{ sensor['temp_delta_threshold'] }}</td>
                         <td>
-                          <button id="delete" class="button-81" role="button" sensor_id="{{ sensor['id'] }}" user_firstname = "{{ user }}" style="margin-left: 10px; background-color: rgb(251, 71, 110);" onclick="deleteSensor(this)">
+                          <button id="delete" class="button-81" role="button" sensor_id="{{ sensor['id'] }}" user_firstname = "{{ user }}" style="margin-left: 10px; background-color: rgb(165, 96, 111);" onclick="deleteSensor(this)">
                             <i class="fas fa-trash-alt"></i> <!-- trash can icon -->
                           </button>
                         </td>
@@ -66,7 +66,7 @@
       <h1 class="h1">Add a Sensor</h1>
     </div>
     <div style="text-align: center;">
-      *To add a sensor, ensure it is in setup mode (SET). Setup mode lasts for 3 minutes.
+      To add a sensor, ensure it is in setup mode (SET). Setup mode lasts for 3 minutes.
     </div>
 
     <div id="tableContainer-1">
@@ -108,7 +108,9 @@
             </tr>
             <tr>
               <td colspan="4">
-                <button id="add" class="button-81" role="button" style="margin-left: 10px; width: 150px;" onclick="addSensor()">&#x2B;</button>
+                <button id="add" class="button-81" role="button" style="margin-left: 10px; width: 150px;" onclick="addSensor()">
+                  <i class="fas fa-plus"></i>
+                </button>
               </td>
             </tr>
           </tbody>

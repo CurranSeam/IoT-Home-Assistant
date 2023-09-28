@@ -46,7 +46,7 @@
                                 <td>{{ reminder.recurrence }}</td>
                                 <td>{{ reminder.description }}</td>
                                 <td>
-                                    <button id="delete" class="button-81" role="button" reminder_id="{{ reminder.id }}" user_firstname="{{ user.first_name }}" style="margin-left: 10px; background-color: rgb(251, 71, 110);" onclick="deleteReminder(this)">
+                                    <button id="delete" class="button-81" role="button" reminder_id="{{ reminder.id }}" user_firstname="{{ user.first_name }}" style="margin-left: 10px; background-color: rgb(165, 96, 111);" onclick="deleteReminder(this)">
                                         <i class="fas fa-trash-alt"></i> <!-- trash can icon -->
                                     </button>
                                 </td>
@@ -112,7 +112,9 @@
                     </tr>
                     <tr>
                       <td colspan="6">
-                        <button id="add" class="button-81" role="button" style="margin-left: 10px; width: 150px;" onclick="addReminder()">&#x2B;</button>
+                        <button id="add" class="button-81" role="button" style="margin-left: 10px; width: 150px;" onclick="addReminder()">
+                          <i class="fas fa-plus"></i>
+                        </button>
                       </td>
                     </tr>
                   </tbody>

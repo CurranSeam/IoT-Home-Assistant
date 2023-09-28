@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
+    <meta http-equiv="Pragma" content="no-cache"/>
+    <meta http-equiv="Expires" content="0"/>
+
+    <title>{{ server }} - Scenes</title>
+
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js" integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy" crossorigin="anonymous"></script>
+
+    <link rel="stylesheet" href="../static/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+  </head>
+
+  <body>
+    <div id="navbar"></div>
+
+    <div>
+      <h1 class="h1">Scenes</h1>
+    </div>
+
+    <div id="tableContainer-1">
+      <div id="tableContainer-2">
+        <table class="user-table" style="margin-top: 50px; width: 80%; height: auto">
+          <tr>
+            <th>User</th>
+            <th>Scenes</th>
+            <th>Enabled</th>
+            <th></th>
+          </tr>
+          <tbody>
+            {% for user in users %}
+                {% set scenes = scenes[loop.index0] %}
+                {% for scene in scenes %}
+                    <tr>
+                        <td>{{ user.first_name if loop.index == 1 else '' }}</td>
+                        <td>
+                          <div class="card">
+                            <div class="card-content">
+                              <p class="name">{{ scene.name }}</p>
+                              <h1 class="description">{{ scene.description }}</h1>
+                              <p class="weather-status">{% if scene.enabled %} {{ "Enabled" }} {% else %} {{ "Disabled" }} {% endif %}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td>
+                          <input type="checkbox" class="checkbox" scene_id="{{ scene.id }}" {% if scene.enabled %}checked{% endif %} onclick="toggleScene(this)">
+                        </td>
+                        <td>
+                            <button id="delete" class="button-81" role="button" scene_id="{{ scene.id }}" scene_name="{{ scene.name }}" user_firstname="{{ user.first_name }}" style="margin-left: 10px; background-color: rgb(165, 96, 111);" onclick="deleteScene(this)">
+                                <i class="fas fa-trash-alt"></i> <!-- trash can icon -->
+                            </button>
+                        </td>
+                    </tr>
+                {% endfor %}
+            {% endfor %}
+        </tbody>
+        </table>
+      </div>
+    </div>
+
+    <br>
+    <br>
+    <br>
+
+    <div>
+      <h1 class="h1">Add a Scene</h1>
+    </div>
+
+    <div style="text-align: center;">
+      When adding a scene, give it a short name and briefly describe what it does! <br> E.g. Name: Night Heating, Description: Keep room heat above 68 F.
+    </div>
+
+    <div id="tableContainer-1">
+      <div id="tableContainer-2">
+        <table class="user-table" style="margin-top: 50px; width: 80%; height: auto">
+          <tr>
+            <th>User</th>
+            <th>Name</th>
+            <th>Description</th>
+          </tr>
+          <tbody>
+            <tr>
+              <td>
+                <select id="userDropDown">
+                  {% for user in users %}
+                    <option value="{{ user.id }}" first_name="{{ user.first_name }}">{{ user.first_name }}</option>
+                  {% endfor %}
+                </select>
+              </td>
+              <td>
+                <input type="text" id="nameInput" placeholder="Reactor shutdown" required>
+              </td>
+              <td>
+                <input type="text" id="descriptionInput" placeholder="Prevent nuclear meltdown">
+              </td>
+            </tr>
+            <tr>
+              <td colspan="3">
+                <button id="add" class="button-81" role="button" style="margin-left: 10px; width: 150px;" onclick="addScene()">
+                    <i class="fas fa-plus"></i>
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <br>
+    <br>
+    <br>
+
+    <div id="footer"></div>
+
+    <script>
+      // Load header and footer on page load
+      $(function(){
+          $("#navbar").load("/static/navbar.html");
+          $("#footer").load("/static/footer.html");
+        });
+    </script>
+
+    <div id="snackbar">Update successful :O)</div>
+
+    <script>
+      function addScene() {
+        document.body.style.cursor = 'wait';
+
+        // Get the values from the input boxes
+        var userDropDown = document.getElementById("userDropDown");
+        var user_id = userDropDown.value;
+        var user_firstname = userDropDown.options[userDropDown.selectedIndex].getAttribute("first_name");
+        var scene_name = document.getElementById("nameInput").value;
+        var description = document.getElementById("descriptionInput").value;
+
+        // Send an HTTP PUT request to the backend to add the scene for the user
+        fetch('/scenes/add', {
+          method: 'PUT',
+          body: JSON.stringify({
+            user_id: user_id,
+            scene_name: scene_name,
+            description: description
+          }),
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        })
+        .then((response) => {
+          if (response.ok) {
+            return response.json();
+          }
+          return response.json().then(data => {
+            throw new Error(data.error);
+          });
+        })
+        .then(data => {
+          if (data.success) {
+            const msg = data.success;
+            localStorage.setItem('sceneAddMessage', msg);
+            window.location.reload(true);
+          }
+        })
+        .catch((error) => {
+          // Clear the input boxes
+          document.getElementById("nameInput").value = "";
+          document.getElementById("descriptionInput").value = "";
+
+          document.body.style.cursor = 'default';
+          updateSnackbar(error, "red");
+        })
+        .finally(() => {
+          document.body.style.cursor = 'default';
+        });
+      }
+
+      function deleteScene(button) {
+        var scene_id = button.getAttribute('scene_id');
+        var scene_name = button.getAttribute('scene_name');
+        var user_firstname = button.getAttribute('user_firstname');
+
+        // Send an HTTP PUT request to the backend to delete the scene for the user
+        fetch('/scenes/delete', {
+          method: 'POST',
+          body: JSON.stringify({
+            scene_id: scene_id,
+            scene_name,
+            user_firstname: user_firstname
+          }),
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        })
+        .then((response) => {
+          if (response.ok) {
+            return response.json();
+          }
+          msg = `Failed to delete scene for ${user_firstname} :O(`
+          throw new Error(msg);
+        })
+        .then((data) => {
+          if (data.success) {
+            const msg = data.success;
+            localStorage.setItem('sceneDeleteMessage', msg);
+            location.reload();
+          }
+        })
+        .catch((error) => {
+          updateSnackbar(error, "red")
+        });
+      }
+
+      // After page is refreshed show scene snackbar info
+      window.onload = function() {
+        const sceneAddMessage = localStorage.getItem('sceneAddMessage');
+        const sceneDeleteMessage = localStorage.getItem('sceneDeleteMessage');
+
+        if (sceneAddMessage) {
+          updateSnackbar(ssceneAddMessage, "rgb(121, 196, 137)");
+          localStorage.removeItem('sceneAddMessage');
+        } else if (sceneDeleteMessage) {
+          updateSnackbar(sceneDeleteMessage, "rgb(121, 196, 137)");
+          localStorage.removeItem('sceneDeleteMessage');
+        }
+      };
+
+      function updateSnackbar(message, color) {
+        var x = document.getElementById("snackbar");
+        x.innerHTML = message
+
+        x.style.backgroundColor = color;
+
+        // Add the "show" class to DIV
+        x.className = "show";
+
+        // After 3 seconds, remove the show class from DIV
+        setTimeout(function(){ x.className = x.className.replace("show", ""); }, 3000);
+      }
+    </script>
+
+  </body>
+</html>

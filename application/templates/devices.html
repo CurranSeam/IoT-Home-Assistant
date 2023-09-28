@@ -48,7 +48,7 @@
                           <button id="update" class="button-81" role="button" device_id="{{ device['id'] }}" device_name="{{ device['name'] }}" style="margin-left: 10px;" onclick="updateTelemetryPeriod(this)">&#x2713;</button>
                         </td>
                         <td>
-                          <button id="delete" class="button-81" role="button" device_id="{{ device['id'] }}" device_name="{{ device['name'] }}" user_firstname = "{{ user }}" style="margin-left: 10px; background-color: rgb(251, 71, 110);" onclick="deleteDevice(this)">
+                          <button id="delete" class="button-81" role="button" device_id="{{ device['id'] }}" device_name="{{ device['name'] }}" user_firstname = "{{ user }}" style="margin-left: 10px; background-color: rgb(165, 96, 111);" onclick="deleteDevice(this)">
                             <i class="fas fa-trash-alt"></i> <!-- trash can icon -->
                           </button>
                         </td>
@@ -106,12 +106,14 @@
               </td>
               <td>
                 <input type="text" id="nameInput" pattern="[A-Za-z]+" placeholder="Thermonuclear reactor" required>
-                <span class="info" style="color: rgb(106, 173, 255)">(Appliance)</span>
+                <span class="info" style="color: #23226B;">(Appliance)</span>
               </td>
             </tr>
             <tr>
               <td colspan="4">
-                <button id="add" class="button-81" role="button" style="margin-left: 10px; width: 150px;" onclick="addDevice()">&#x2B;</button>
+                <button id="add" class="button-81" role="button" style="margin-left: 10px; width: 150px;" onclick="addDevice()">
+                  <i class="fas fa-plus"></i>
+                </button>
               </td>
             </tr>
           </tbody>

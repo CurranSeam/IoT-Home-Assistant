@@ -58,6 +58,6 @@ def delete_reminder():
     reminder = Reminder.get_reminder(id=reminder_id)
 
     scheduler.delete_job(reminder.job_id)
-    Reminder.delete_reminder(reminder_id)
+    Reminder.delete_reminder(reminder)
 
     return jsonify({'success': f'{reminder.title} successfully deleted for {user_firstname} :O)'}), 200

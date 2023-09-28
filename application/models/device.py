@@ -10,7 +10,7 @@ class BaseModel(Model):
 
 class Device(BaseModel):
     name = CharField()
-    is_on = BooleanField(default=True)
+    enabled = BooleanField(default=True)
     ip_address = CharField()
     telemetry_period = IntegerField(default=300)
     status = TextField(default="No device data yet (system delay).")

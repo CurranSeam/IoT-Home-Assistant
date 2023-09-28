@@ -34,8 +34,7 @@ def get_reminders():
 def get_reminders_by_user(user):
     return Reminder.select().where(Reminder.user == user)
 
-def add_reminder(user_id, title, reminder_datetime, recurrence, description=None):
-    user = User.get_user(id=user_id)
+def add_reminder(user, title, reminder_datetime, recurrence, description=None):
     reminder = Reminder.create(
                         user=user,
                         title=title,
@@ -45,8 +44,7 @@ def add_reminder(user_id, title, reminder_datetime, recurrence, description=None
                     )
     return reminder
 
-def delete_reminder(reminder_id):
-    reminder = Reminder.get(Reminder.id == reminder_id)
+def delete_reminder(reminder):
     reminder.delete_instance()
 
     return reminder

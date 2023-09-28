@@ -56,9 +56,9 @@ def parse_device_message(msg):
             status = "\n\n".join(status)
 
             if reading.lower().strip() == "on":
-                DeviceRepo.update_is_on(component_id, True)
+                DeviceRepo.update_enabled(component_id, True)
             else:
-                DeviceRepo.update_is_on(component_id, False)
+                DeviceRepo.update_enabled(component_id, False)
 
             # Update device's status with the power state
             DeviceRepo.update_status(component_id, status)

@@ -66,9 +66,9 @@ def update_status(device_id, status):
 
     device.save()
 
-def update_is_on(device_id, state):
+def update_enabled(device_id, state):
     device = Device.get(Device.id == device_id)
-    device.is_on = state
+    device.enabled = state
 
     device.save()
 

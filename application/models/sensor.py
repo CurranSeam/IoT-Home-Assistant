@@ -10,6 +10,8 @@ class BaseModel(Model):
         database = database
 
 class Sensor(BaseModel):
+    name = CharField()
+    type = CharField()
     location = CharField()
     ip_address = CharField()
     firmware = CharField()
@@ -17,7 +19,6 @@ class Sensor(BaseModel):
     user = ForeignKeyField(User, backref='sensors', on_delete='CASCADE')
 
 class TemperatureSensor(Sensor):
-    name = CharField()
     temperature = FloatField(default=0)
     temp_unit = CharField(default="F")
     temp_delta_threshold = FloatField(default=0.5)
@@ -25,13 +26,15 @@ class TemperatureSensor(Sensor):
     humidity = FloatField(default=0)
     humidity_delta_threshold = FloatField(default=5)
     humidity_offset = FloatField(default=0)
-    sensor = ForeignKeyField(Sensor, backref='temperature_sensors', on_delete='CASCADE')
+    sensor = ForeignKeyField(Sensor, backref='temperature_sensor', unique=True, on_delete='CASCADE')
 
     @classmethod
-    def create_with_sensor(cls, location, ip_address, firmware, user, **kwargs):
+    def create_with_sensor(cls, name, location, ip_address, firmware, user, **kwargs):
         with database.atomic() as transaction:
             try:
                 sensor = Sensor.create(
+                    name=name,
+                    type="temperature_sensor",
                     location=location,
                     ip_address=ip_address,
                     firmware=firmware,

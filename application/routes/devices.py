@@ -23,7 +23,7 @@ def devices():
         for d in device_list:
             data.append({
                 'name': d.name,
-                'state': d.is_on,
+                'state': d.enabled,
                 'tele_period': d.telemetry_period,
                 'id': d.id
             })

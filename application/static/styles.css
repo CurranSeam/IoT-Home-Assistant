@@ -3,6 +3,10 @@ html, body {
   height: 100%;
 }
 body {
+  background: url(https://img.freepik.com/free-vector/panorama-foggy-morning-horizontal-blurred-background-with-trees-vector-abstract-landscape_105738-1744.jpg?w=2000&t=st=1695795590~exp=1695796190~hmac=2cd490bafdbdc8d2bb5888b4e2f28b8c874b2961f8943cf12fe7cf88ac45978e);
+  background-repeat: no-repeat;
+  background-size: 100% 200%;
+  backdrop-filter: blur( 16.5px );
   margin: 0;
   font-family: Arial, sans-serif;
   background-color: #f5f5f5;
@@ -13,13 +17,14 @@ body {
   flex: 1 0 auto;
 }
 .header {
-  /* position: fixed; */
+  box-shadow: 0 8px 32px 0 rgba( 31, 38, 135, 0.37 );
+  backdrop-filter: blur( 16.5px );
+  -webkit-backdrop-filter: blur( 16.5px );
+  border: 1px solid rgba( 255, 255, 255, 0.18 );
   left: 0;
   width: 100%;
   height: 140px;
-  background-color: #fff;
-  box-shadow: 0 3px 7px rgba(0, 0, 0, 0.1);
-  z-index: 1;
+  /* z-index: 1; */
 }
 .title {
   font-size: 24px;
@@ -31,13 +36,12 @@ body {
 
 /* FOOTER */
 .footer {
-  /* position: absolute; */
-  /* left: 0; */
-  /* bottom: 0; */
+  box-shadow: 0 8px 32px 0 rgba( 31, 38, 135, 0.37 );
+  backdrop-filter: blur( 16.5px );
+  -webkit-backdrop-filter: blur( 16.5px );
+  border: 1px solid rgba( 255, 255, 255, 0.18 );
   width: 100%;
   height: 90px;
-  background-color: #fff;
-  box-shadow: 0 -3px 7px rgba(0, 0, 0, 0.1);
   /* z-index: 1; */
 }
 .footer .container {
@@ -79,6 +83,7 @@ body {
   float: right;
 }
 .nav a {
+  color: black;
   margin: 35px 10px auto auto;
   float: left;
   text-align: center;
@@ -91,12 +96,13 @@ body {
   overflow: hidden;
 }
 .dropdown-content {
+  border-radius: 30px;
   display: none;
   position: absolute;
-  background-color: #f9f9f9;
+  background-color: rgba(214, 214, 214, 0.9);
   min-width: 230px;
-  box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
-  z-index: 1;
+  box-shadow: 0 8px 32px 0 rgba( 31, 38, 135, 0.37 );
+  /* z-index: 1; */
 }
 .dropdown .dropbtn {
   margin: 0;
@@ -120,12 +126,13 @@ body {
   display: block;
 }
 .nav a.active, .nav-right a.active, .dropdown.active {
-  border-bottom: 3px solid rgb(79, 158, 255);
+  border-bottom: 3px solid #23226B;
 }
 .nav a:hover, .dropbtn a:hover {
-  background-color: #2e3f59;
-  color: #ffffff;
-  border-radius: 7px;
+  transform: scale(1.05);
+  background-color: rgba(234, 234, 234, 0.7);
+  border-bottom: rgba(234, 234, 234, 0.7);
+  border-radius: 30px;
 }
 
 /* DISPLAY */
@@ -137,15 +144,17 @@ h1 {
   font-family: 'Segoe UI', monospace;
 }
 .marginauto {
+  box-shadow: 0 8px 32px 10px rgba(12, 15, 54, 0.37);
   margin: 50px auto 20px auto;
   display: block;
 }
 .indicator {
+  box-shadow: 0 8px 32px 0 rgba( 31, 38, 135, 0.37 );
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 10px;
-  background-color: #F2F2F2;
+  background-color: #e8e8e8;
   border-radius: 8px;
   font-size: 16px;
   font-weight: bold;
@@ -164,9 +173,7 @@ h1 {
 
 /* FEED BUTTON */
 .button-81 {
-  background-color: rgb(106, 173, 255);
-  border: 0 solid #e2e8f0;
-  border-radius: 1.5rem;
+  background-color: #cac4c2;
   box-sizing: border-box;
   color: #0d172a;
   display: inline-block;
@@ -179,14 +186,18 @@ h1 {
   text-decoration: none #0d172a solid;
   text-decoration-thickness: auto;
   transition: all .1s cubic-bezier(.4, 0, .2, 1);
-  box-shadow: 0 3px 7px rgba(0, 0, 0, 0.1);
   user-select: none;
   -webkit-user-select: none;
   touch-action: manipulation;
+  border-radius:30px;
+  box-shadow: 0 8px 32px 0 rgba( 31, 38, 135, 0.37 );
+  backdrop-filter: blur( 16.5px );
+  -webkit-backdrop-filter: blur( 16.5px );
+  border: 1px solid rgba( 255, 255, 255, 0.18 );
 }
 .button-81:hover:enabled {
   cursor: pointer;
-  background-color: #2e3f59;
+  background-color: #8d8887;
   color: #fff;
   transform: scale(1.2);
 }
@@ -197,6 +208,59 @@ h1 {
   }
 }
 
+/* GLASS CARD */
+.card{
+  cursor: pointer;
+  display: inline-block;
+  vertical-align: middle;
+  padding: 1.5rem;
+  width: 300px;
+  border-radius: 30px;
+  margin: 15px 0;
+  transition: all .1s cubic-bezier(.4, 0, .2, 1);
+  background: #e8e8e8;
+  box-shadow: 0 8px 32px 0 rgba( 31, 38, 135, 0.37 );
+  backdrop-filter: blur( 16.5px );
+  -webkit-backdrop-filter: blur( 16.5px );
+  border: 1px solid rgba( 255, 255, 255, 0.18 );
+  backdrop-filter: blur(20px);
+  transition: 250ms;
+  transform-style: preserve-3d;
+  transform-origin: center;
+  z-index: 1;
+  overflow: hidden;
+}
+.card:hover{
+  background: linear-gradient(#cac4c2, #e8e8e8);
+  transform: scale(1.01) translateZ(80px) translateY(-10px);
+}
+.name{
+  font-family: sans-serif;
+  font-size: 18px;
+  font-weight: 400;
+  text-transform: capitalize;
+  text-transform: uppercase;
+  color: #23226B;
+}
+.description{
+  font-size: 16px;
+  text-transform: capitalize;
+  color: #23226B;
+  font-family: sans-serif;
+}
+.weather-status{
+  font-family: sans-serif;
+  font-style: normal;
+  font-weight: 400;
+  font-size: 13px;
+  text-transform: uppercase;
+  color: #ffad1c;
+}
+.card-image img{
+  width: 100px;
+  height: 100px;
+}
+
 /* SETTINGS */
 #tableContainer-1 {
   height: 100%;
@@ -204,16 +268,22 @@ h1 {
   display: table;
 }
 #tableContainer-2 {
-  /* vertical-align: middle; */
   display: table-cell;
   height: 100%;
 }
 #tableContainer-1-small {
+  border-radius:30px;
   height: 100%;
   width: 50%;
   display: table;
 }
 .user-table {
+  overflow: hidden;
+  border-radius:30px;
+  box-shadow: 0 8px 32px 0 rgba( 31, 38, 135, 0.37 );
+  backdrop-filter: blur( 16.5px );
+  -webkit-backdrop-filter: blur( 16.5px );
+  border: 1px solid rgba( 255, 255, 255, 0.18 );
   margin: 0 auto; /* center the table */
   border-collapse: collapse; /* remove the cell borders */
   width: 100%; /* set the table width */
@@ -229,9 +299,10 @@ h1 {
   font-weight: bold; /* make the header text bold */
 }
 .user-table tr:nth-child(even) {
-  background-color: #f1f1f1; /* add a light gray background to every even row */
+  background-color: #e8e8e8; /* add a light gray background to every even row */
 }
 input.checkbox {
+  border-radius:30px;
   cursor: pointer;
   height: 35px;
   width: 35px;
@@ -249,7 +320,7 @@ input.slider {
   background-color: rgb(121, 196, 137);
   color: #333;
   text-align: center;
-  border-radius: 7px; /* Rounded borders */
+  border-radius: 30px; /* Rounded borders */
   padding: 16px;
   position: fixed; /* Sit on top of the screen */
   z-index: 1;

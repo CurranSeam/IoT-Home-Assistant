@@ -21,15 +21,15 @@ def get_scene(id=None, user=None):
         log_exception(e)
         return None
 
-    reminder = {
+    scene = {
         id: lambda: Scene.get(Scene.id == id),
         user: lambda: Scene.get(Scene.user == user),
     }[next(filter(lambda param: param is not None, params))]
 
-    return reminder()
+    return scene()
 
 def get_scenes():
-    return Scene.select().order_by(Scene.datetime)
+    return Scene.select().order_by(Scene.user.id)
 
 def get_scenes_by_user(user):
     return Scene.select().where(Scene.user == user)

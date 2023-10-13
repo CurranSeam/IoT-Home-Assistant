@@ -6,7 +6,7 @@ from application.services import security as vault
 from application.services.telegram import telegram
 from application.services.video import object_detection
 
-from flask import request, render_template, jsonify, Blueprint
+from flask import request, render_template, jsonify, Blueprint, send_from_directory
 
 bp = Blueprint('settings', __name__)
 
@@ -32,6 +32,10 @@ def settings():
 def get_bot_username():
     username = vault.get_value("APP", "config", "bot_username")
     return username
+
+@bp.route('/get_bot_image', methods=["GET"])
+def get_bot_image():
+    return send_from_directory("static", "bot.png", mimetype='image/jpeg')
 
 @bp.route('/users/<string:user_id>/<string:service>/notifications', methods=["PUT"])
 def update_notification_status(user_id, service):

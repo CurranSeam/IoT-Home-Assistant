@@ -18,7 +18,7 @@
   </head>
 
   <body>
-    <div id="navbar"></div>
+    {% include 'includes/navbar.html' %}
 
     <div>
       <h1 class="h1">User Settings</h1>
@@ -132,15 +132,7 @@
     <br>
     <br>
 
-    <div id="footer"></div>
-
-    <script>
-      // Load header and footer on page load
-      $(function(){
-          $("#navbar").load("/static/navbar.html");
-          $("#footer").load("/static/footer.html");
-        });
-    </script>
+    {% include 'includes/footer.html' %}
 
     <div id="snackbar">Update successful :O)</div>
 

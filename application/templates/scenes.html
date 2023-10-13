@@ -16,7 +16,7 @@
   </head>
 
   <body>
-    <div id="navbar"></div>
+    {% include 'includes/navbar.html' %}
 
     <div>
       <h1 class="h1">Scenes</h1>
@@ -38,11 +38,11 @@
                     <tr>
                         <td>{{ user.first_name if loop.index == 1 else '' }}</td>
                         <td>
-                          <div class="card">
+                          <div class="card" url="{{ url_for('scene_editor.scene_editor', scene_id=scene.id, user_id=user.id)}}" onclick='sceneEditorRedirect(this)'>
                             <div class="card-content">
                               <p class="name">{{ scene.name }}</p>
                               <h1 class="description">{{ scene.description }}</h1>
-                              <p class="weather-status">{% if scene.enabled %} {{ "Enabled" }} {% else %} {{ "Disabled" }} {% endif %}</p>
+                              <p class="status">{{ scene.status }}</p>
                             </div>
                           </div>
                         </td>
@@ -114,15 +114,7 @@
     <br>
     <br>
 
-    <div id="footer"></div>
-
-    <script>
-      // Load header and footer on page load
-      $(function(){
-          $("#navbar").load("/static/navbar.html");
-          $("#footer").load("/static/footer.html");
-        });
-    </script>
+    {% include 'includes/footer.html' %}
 
     <div id="snackbar">Update successful :O)</div>
 
@@ -213,13 +205,19 @@
         });
       }
 
+      function sceneEditorRedirect(scene_card) {
+          var url = scene_card.getAttribute("url")
+
+          document.location.href = url;
+      }
+
       // After page is refreshed show scene snackbar info
       window.onload = function() {
         const sceneAddMessage = localStorage.getItem('sceneAddMessage');
         const sceneDeleteMessage = localStorage.getItem('sceneDeleteMessage');
 
         if (sceneAddMessage) {
-          updateSnackbar(ssceneAddMessage, "rgb(121, 196, 137)");
+          updateSnackbar(sceneAddMessage, "rgb(121, 196, 137)");
           localStorage.removeItem('sceneAddMessage');
         } else if (sceneDeleteMessage) {
           updateSnackbar(sceneDeleteMessage, "rgb(121, 196, 137)");

@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
+    <meta http-equiv="Pragma" content="no-cache"/>
+    <meta http-equiv="Expires" content="0"/>
+
+    <title>{{ server }} - Scene Editor</title>
+
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js" integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy" crossorigin="anonymous"></script>
+
+    <link rel="stylesheet" href="../../static/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+
+    <style>
+      /* Basic styling for the scene action editor */
+      #editor {
+        width: 80%;
+        display: inline-block;
+        vertical-align: middle;
+        border: 5px solid #5c5c5c;
+        padding: 20px;
+        min-height: 300px;
+        border-radius: 30px;
+      }
+
+      .scene-action-card {
+        display: inline-block;
+        vertical-align: middle;
+        text-align: center;
+        box-shadow: 0 8px 32px 0 rgba( 31, 38, 135, 0.37 );
+        border-radius: 30px;
+        background-color: #e8e8e8;
+        border: 1px solid #ccc;
+        padding: 10px;
+        margin: 10px;
+        cursor: pointer;
+      }
+  </style>
+  </head>
+
+  <body>
+    {% include 'includes/navbar.html' %}
+
+    <div>
+      <h1 class="h1">Scene Editor</h1>
+    </div>
+
+    <div style="text-align: center;">
+        Drag and drop scene action cards to create a sequence for your scene.
+    </div>
+
+    <div style="text-align: center; margin-top: 50px;">
+      <div id="editor" ondrop="drop(event)" ondragover="allowDrop(event)"></div>
+
+      <br>
+      <br>
+
+      <button id="clear" class="button-81" style="width: 10%;" role="button" onclick="clearEditor()">
+        <i class="fas fa-eraser"></i> <!-- eraser icon -->
+      </button>
+
+      <br>
+      <br>
+      <br>
+
+      {% for action in scene_actions %}
+        <div style="width: 20%;" id="{{ action.id }}" class="scene-action-card" draggable="true" ondragstart="drag(event)">
+          {{ action.device.name }} {{ action.action_type }} @ {{ action.start_time }}
+          <button id="delete" class="button-81" role="button" scene_action_id="{{ action.id }}" style="margin-left: 10px; background-color: rgb(165, 96, 111); transform: scale(0.6);" onclick="deleteSceneAction(this)">
+            <i class="fas fa-trash-alt"></i> <!-- trash can icon -->
+          </button>
+        </div>
+      {% endfor %}
+    </div>
+
+    <br>
+    <br>
+    <br>
+
+    <div>
+      <h1 class="h1">Add a Scene Action</h1>
+    </div>
+
+    <div style="text-align: center;">
+      A scene action is a simple automated piece of a scene. <br><br>
+      <div>
+        A night heating scene could comprise of 3 actions: <br>
+        - Start heater at 10:15 PM <br> - Keep temperature above some value <br> - Turn off heater at 10:00 AM
+      </div>
+    </div>
+
+    <div id="tableContainer-1">
+      <div id="tableContainer-2">
+        <table class="user-table" style="margin-top: 50px; width: 80%; height: auto">
+          <tr>
+            <th>Sensor Type</th>
+            <th style="display: none;" id="sensorHeader">Sensors</th>
+            <th style="display: none;" id="actionParamHeader">Action Param</th>
+            <th>Device</th>
+            <th>Action Type</th>
+            <th>Start</th>
+            <th>End</th>
+          </tr>
+          <tbody>
+            <tr>
+              <td>
+                <select id="sensorTypeDropdown">
+                  <option value="">None</option>
+                  <option value="temperature">Temperature</option>
+                </select>
+              </td>
+              <td style="display: none;">
+                <select id="sensorDropdown">
+                </select>
+              </td>
+              <td style="display: none;">
+                <input type="number" id="actionParamInput">
+              </td>
+              <td>
+                <select id="deviceSelect" required>
+                  {% for device in devices %}
+                    <option value="{{ device.id }}">{{ device.name }}</option>
+                  {% endfor %}
+                </select>
+              </td>
+              <td>
+                <select id="actionInput">
+                  <option value="on">On</option>
+                  <option value="off">Off</option>
+                </select>
+              </td>
+              <td>
+                <input type="time" id="startTimeInput" required>
+              </td>
+              <td>
+                <input type="time" id="endTimeInput" required>
+              </td>
+            </tr>
+            <tr>
+              <td colspan="7">
+                <button id="add" scene_id="{{ scene_id }}" class="button-81" role="button" style="margin-left: 10px; width: 150px;" onclick="addSceneAction(this)">
+                    <i class="fas fa-plus"></i>
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <br>
+    <br>
+    <br>
+
+    {% include 'includes/footer.html' %}
+
+    <div id="snackbar">Update successful :O)</div>
+
+    <script>
+        // Function to allow dropping a scene action card into the editor
+        function allowDrop(event) {
+            event.preventDefault();
+        }
+
+        // Function to handle the drag start event
+        function drag(event) {
+            event.dataTransfer.setData("text", event.target.innerText);
+        }
+
+        // Function to handle the drop event
+        function drop(event) {
+            event.preventDefault();
+            const data = event.dataTransfer.getData("text");
+            const sceneActionCard = document.createElement("div");
+            sceneActionCard.className = "scene-action-card";
+            sceneActionCard.innerText = data;
+            event.target.appendChild(sceneActionCard);
+        }
+
+        function clearEditor() {
+          const container = document.getElementById("editor");
+
+          while (container.firstChild) {
+              container.removeChild(container.firstChild);
+          }
+        }
+
+        function addSceneAction(button) {
+            document.body.style.cursor = 'wait';
+
+            // Get the values from the input boxes
+            var scene_id = button.getAttribute("scene_id");
+            var sensor = document.getElementById("sensorDropdown").value;
+            var actionType = document.getElementById("actionInput").value;
+            var actionParam = document.getElementById("actionParamInput").value;
+            var startTime = document.getElementById("startTimeInput").value;
+            var endTime = document.getElementById("endTimeInput").value;
+            var device = document.getElementById("deviceSelect").value;
+
+            fetch('/scene-editor/scene-action/add', {
+            method: 'PUT',
+            body: JSON.stringify({
+                scene_id: scene_id,
+                action_type: actionType,
+                action_param: actionParam,
+                device: device,
+                start_time: startTime,
+                end_time: endTime,
+                sensor: sensor,
+            }),
+            headers: {
+                'Content-Type': 'application/json'
+            }
+            })
+            .then((response) => {
+            if (response.ok) {
+                return response.json();
+            }
+            return response.json().then(data => {
+                throw new Error(data.error);
+            });
+            })
+            .then(data => {
+            if (data.success) {
+                const msg = data.success;
+                localStorage.setItem('sceneActionAddMessage', msg);
+                location.reload();
+            }
+            })
+            .catch((error) => {
+            // Clear the input boxes
+            sensor.value = "";
+            actionType.value = "";
+            actionParam.value = "";
+            description.value = "";
+
+            document.body.style.cursor = 'default';
+            updateSnackbar(error, "red");
+            })
+            .finally(() => {
+            document.body.style.cursor = 'default';
+            });
+        }
+
+        function deleteSceneAction(button) {
+            var scene_action_id = button.getAttribute('scene_action_id');
+
+            fetch('/scene-editor/scene-action/delete', {
+            method: 'POST',
+            body: JSON.stringify({
+                scene_action_id: scene_action_id
+            }),
+            headers: {
+                'Content-Type': 'application/json'
+            }
+            })
+            .then((response) => {
+            if (response.ok) {
+                return response.json();
+            }
+            msg = `Failed to delete scene action :O(`
+            throw new Error(msg);
+            })
+            .then((data) => {
+            if (data.success) {
+                const msg = data.success;
+                localStorage.setItem('sceneActionDeleteMessage', msg);
+                location.reload();
+            }
+            })
+            .catch((error) => {
+            updateSnackbar(error, "red")
+            });
+        }
+
+        // Get references to the sensor type dropdown and specific input field rows
+        const sensorTypeDropdown = document.getElementById("sensorTypeDropdown");
+
+        const sensorHeader = document.getElementById("sensorHeader");
+        const actionParamHeader = document.getElementById("actionParamHeader");
+
+        const sensorDropdown = document.getElementById("sensorDropdown").parentElement;
+        const actionParamInput = document.getElementById("actionParamInput").parentElement;
+
+        sensorTypeDropdown.addEventListener("change", function() {
+            const selectedSensorType = sensorTypeDropdown.value;
+
+            sensorHeader.style.display = "none";
+            sensorDropdown.style.display = "none";
+
+            actionParamHeader.style.display = "none";
+            actionParamInput.style.display = "none";
+
+            if (selectedSensorType === "temperature") {
+              sensorHeader.style.display = "table-cell";
+              sensorDropdown.style.display = "table-cell";
+              actionParamHeader.style.display = "table-cell";
+              actionParamInput.style.display = "table-cell";
+            }
+        });
+
+        window.onload = function() {
+          const sceneActionAddMessage = localStorage.getItem('sceneActionAddMessage');
+          const sceneActionDeleteMessage = localStorage.getItem('sceneActionDeleteMessage');
+
+          if (sceneActionAddMessage) {
+            updateSnackbar(sceneActionAddMessage, "rgb(121, 196, 137)");
+            localStorage.removeItem('sceneActionAddMessage');
+          } else if (sceneActionDeleteMessage) {
+            updateSnackbar(sceneActionDeleteMessage, "rgb(121, 196, 137)");
+            localStorage.removeItem('sceneActionDeleteMessage');
+          }
+
+          func = function() {
+            var date = new Date();
+            var currentTime = date.toString().substring(16,21);
+
+            document.getElementById('startTimeInput').value = currentTime;
+          }
+
+          func()
+
+          setInterval(() => {func()}, 30000);
+        };
+
+        function updateSnackbar(message, color) {
+            var x = document.getElementById("snackbar");
+            x.innerHTML = message
+
+            x.style.backgroundColor = color;
+
+            // Add the "show" class to DIV
+            x.className = "show";
+
+            // After 3 seconds, remove the show class from DIV
+            setTimeout(function(){ x.className = x.className.replace("show", ""); }, 3000);
+        }
+    </script>
+
+  </body>
+</html>

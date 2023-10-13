@@ -21,7 +21,7 @@ def sensors():
         data = []
         for t in temp_sensor_list:
             data.append({
-                'location': t.location,
+                'location': t.sensor.location,
                 'temperature': t.temperature,
                 'temp_unit': t.temp_unit,
                 'temp_delta_threshold': t.temp_delta_threshold,
@@ -62,7 +62,7 @@ def add_sensor():
                     user_id = data['user_id']
                     user_firstname = data['user_firstname']
 
-                    sensor = TemperatureSensor.add_sensor(user_id, sensor_name, location, ip_address, "shelly")
+                    t_sensor = TemperatureSensor.add_sensor(user_id, sensor_name, location, ip_address, "shelly")
 
                     url = f"http://{ip_address}/rpc"
                     mqtt_host = vault.get_value("APP", "config", "host")
@@ -86,7 +86,7 @@ def add_sensor():
                                 "config" : {
                                     "enable" : True,
                                     "server" : f"{mqtt_host}:{mqtt_port}",
-                                    "topic_prefix" : f"sensors_{sensor.id}_{sensor.name}"
+                                    "topic_prefix" : f"sensors_{t_sensor.id}_{t_sensor.sensor.name}"
                                     }
                             }
                         },
@@ -100,13 +100,13 @@ def add_sensor():
                         response = requests.post(url, data=json.dumps(d))
 
                         if response.status_code != 200:
-                            TemperatureSensor.delete_sensor(sensor.id)
+                            TemperatureSensor.delete_sensor(t_sensor.id)
                             return jsonify({'error': f'Failed to add sensor :O('}), response.status_code
 
                         # Subscribe to topics and update data before sensor is rebooted.
                         if idx == len(data) - 1:
-                            mqtt.subscribe(sensor)
-                            mqtt.update_sensor_temp(sensor)
+                            mqtt.subscribe(t_sensor)
+                            mqtt.update_sensor_temp(t_sensor)
 
                     return jsonify({'success': f'Sensor successfully added for {user_firstname} :O)'}), 200
             except requests.exceptions.RequestException:

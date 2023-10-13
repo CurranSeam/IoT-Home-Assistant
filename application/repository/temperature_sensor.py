@@ -1,3 +1,5 @@
+
+from application.models.sensor import Sensor
 from application.models.sensor import TemperatureSensor
 from application.repository import user as User
 from application.utils.exception_handler import log_exception
@@ -38,7 +40,11 @@ def get_sensors():
     return TemperatureSensor.select()
 
 def get_sensors_by_user(user_id):
-    return TemperatureSensor.select().where(TemperatureSensor.user_id == user_id)
+    query = TemperatureSensor.select().join(
+                Sensor,
+                on=(TemperatureSensor.sensor == Sensor.id),
+            ).where(Sensor.user_id == user_id)
+    return query
 
 def add_sensor(user_id, name, location, ip_address, firmware):
     user = User.get_user(id=user_id)
@@ -54,7 +60,7 @@ def delete_sensor(id):
     return temp_sensor
 
 def get_ip_addresses():
-    return [s.ip_address for s in get_sensors()]
+    return [t.sensor.ip_address for t in get_sensors()]
 
 def update_temperature(sensor, temperature):
     sensor.temperature = temperature

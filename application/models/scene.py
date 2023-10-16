@@ -1,7 +1,7 @@
 import datetime
 import json
-from peewee import (Model, BooleanField, CharField, DateTimeField, ForeignKeyField,
-                    ManyToManyField, PeeweeException, TextField)
+from peewee import (Model, BlobField, BooleanField, CharField, DateTimeField,
+                    ForeignKeyField, ManyToManyField, TextField)
 
 from application import database
 from application.models.user import User
@@ -25,21 +25,10 @@ class SceneAction(BaseModel):
     enabled = BooleanField(default=True)
 
     sensor = ForeignKeyField(Sensor, backref='actions', null=True, on_delete='SET NULL')
-    devices = ManyToManyField(Device, backref='actions')
+    device = ForeignKeyField(Device, backref='actions', on_delete='CASCADE')
 
-    start_time = DateTimeField(null=True)
+    start_time = DateTimeField(default=datetime.datetime.now)
     end_time = DateTimeField(null=True)
 
     action_type = CharField()
-    action_params = CharField()
-
-    @classmethod
-    def create_action(cls, scene, sensor, devices, action_type, action_params):
-        with database.atomic() as transaction:
-            try:
-                return cls.create(scene=scene, sensor=sensor, devices=devices, action_type=action_type, action_params=json.dumps(action_params))
-            except PeeweeException:
-                transaction.rollback()
-
-    def get_action_params(self):
-        return json.loads(self.action_params)
+    action_param = BlobField(null=True)

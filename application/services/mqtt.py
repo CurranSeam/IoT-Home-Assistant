@@ -134,7 +134,7 @@ def __publish(component, cmd="", payload=""):
         message = f'devices_{component.id}_{component.name}/cmnd/{cmd}'
 
     elif isinstance(component, TemperatureSensor):
-        message = f'sensors_{component.id}_{component.name}/command'
+        message = f'sensors_{component.id}_{component.sensor.name}/command'
 
     __client.publish(message, payload)
 
@@ -153,7 +153,7 @@ def __manage_subscriptions(component, action):
     elif isinstance(component, TemperatureSensor):
         # Topic that contains device status as a response to
         # when status_update is published on <...>/command
-        status_topic = f'sensors_{component.id}_{component.name}/status'
+        status_topic = f'sensors_{component.id}_{component.sensor.name}/status'
         topics = [(status_topic, 0)]
 
     else:

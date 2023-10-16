@@ -18,7 +18,7 @@ class Sensor(BaseModel):
     created_at = DateTimeField(default=datetime.datetime.now)
     user = ForeignKeyField(User, backref='sensors', on_delete='CASCADE')
 
-class TemperatureSensor(Sensor):
+class TemperatureSensor(BaseModel):
     temperature = FloatField(default=0)
     temp_unit = CharField(default="F")
     temp_delta_threshold = FloatField(default=0.5)
@@ -29,7 +29,7 @@ class TemperatureSensor(Sensor):
     sensor = ForeignKeyField(Sensor, backref='temperature_sensor', unique=True, on_delete='CASCADE')
 
     @classmethod
-    def create_with_sensor(cls, name, location, ip_address, firmware, user, **kwargs):
+    def create_with_sensor(cls, user, name, location, ip_address, firmware, **kwargs):
         with database.atomic() as transaction:
             try:
                 sensor = Sensor.create(
@@ -40,12 +40,17 @@ class TemperatureSensor(Sensor):
                     firmware=firmware,
                     user=user
                 )
-                return cls.create(sensor=sensor, location=location, ip_address=ip_address,
-                                firmware=firmware, user=user, **kwargs)
+                return cls.create(sensor=sensor, **kwargs)
             except PeeweeException:
                 transaction.rollback()
 
     @classmethod
     def delete_with_sensor(cls, temperature_sensor):
-        sensor = Sensor.get(id=temperature_sensor.sensor.id)
-        Sensor.delete_instance(sensor)
+        with database.atomic() as transaction:
+            try:
+                sensor = Sensor.get(id=temperature_sensor.sensor.id)
+                sensor.delete_instance()
+                temperature_sensor.delete_instance()
+
+            except PeeweeException:
+                transaction.rollback()

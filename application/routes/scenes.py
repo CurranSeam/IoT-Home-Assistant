@@ -30,12 +30,12 @@ def add_scene():
 
     if scene_name == '' or description == '':
         return jsonify({'error': 'Name, and description fields are required'}), 400
-    else:
-        Scene.add_scene(user, scene_name, description)
-        return jsonify({'success': f'{scene_name} scene created successfully'})
+
+    Scene.add_scene(user, scene_name, description)
+    return jsonify({'success': f'{scene_name} scene created successfully'})
 
 @bp.route('/scenes/delete', methods=["POST"])
-def delete_reminder():
+def delete_scene():
     data = request.get_json()
     scene_id = data['scene_id']
     scene_name = data['scene_name']

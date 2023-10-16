@@ -15,7 +15,7 @@
   </head>
 
   <body>
-    <div id="navbar"></div>
+    {% include 'includes/navbar.html' %}
 
     <div class="content">
       <div>
@@ -25,15 +25,7 @@
       <p id="stats" style="text-align: center; font-size: 20px;"><br></p>
     </div>
 
-    <div id="footer"></div>
-
-    <script>
-      // Load header and footer on page load
-      $(function(){
-          $("#navbar").load("/static/navbar.html");
-          $("#footer").load("/static/footer.html");
-        });
-    </script>
+    {% include 'includes/footer.html' %}
 
     <script>
       const uri = "ws://" + "{{ host }}" + ":{{ port }}"

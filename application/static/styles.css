@@ -3,7 +3,7 @@ html, body {
   height: 100%;
 }
 body {
-  background: url(https://img.freepik.com/free-vector/panorama-foggy-morning-horizontal-blurred-background-with-trees-vector-abstract-landscape_105738-1744.jpg?w=2000&t=st=1695795590~exp=1695796190~hmac=2cd490bafdbdc8d2bb5888b4e2f28b8c874b2961f8943cf12fe7cf88ac45978e);
+  background: url('main_background.png');
   background-repeat: no-repeat;
   background-size: 100% 200%;
   backdrop-filter: blur( 16.5px );
@@ -248,7 +248,7 @@ h1 {
   color: #23226B;
   font-family: sans-serif;
 }
-.weather-status{
+.status{
   font-family: sans-serif;
   font-style: normal;
   font-weight: 400;

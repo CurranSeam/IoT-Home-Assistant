@@ -58,7 +58,7 @@
 
 <body>
   <!-- Header -->
-  <div id="navbar"></div>
+  {% include 'includes/navbar.html' %}
 
   <div class="content">
     <div>
@@ -83,15 +83,9 @@
   <br>
   <br>
 
-  <div id="footer"></div>
+  {% include 'includes/footer.html' %}
 
   <script>
-    // Load header and footer on page load
-    $(function(){
-        $("#navbar").load("/static/navbar.html");
-        $("#footer").load("/static/footer.html");
-      });
-
       window.onload = function() {
         getDetectionState()
       };

@@ -1,7 +1,7 @@
 import datetime
 import json
 from peewee import (Model, BlobField, BooleanField, CharField, DateTimeField,
-                    ForeignKeyField, ManyToManyField, TextField)
+                    ForeignKeyField, IntegerField, TextField)
 
 from application import database
 from application.models.user import User
@@ -32,3 +32,5 @@ class SceneAction(BaseModel):
 
     action_type = CharField()
     action_param = BlobField(null=True)
+
+    sequence_order = IntegerField(null=True)

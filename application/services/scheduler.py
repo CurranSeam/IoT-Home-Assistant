@@ -1,6 +1,6 @@
 import application.repository.reminder as Reminder
 
-from application.services import mqtt, svc_common
+from application.services import svc_common
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.schedulers.base import JobLookupError
 from apscheduler.triggers.cron import CronTrigger
@@ -66,19 +66,6 @@ def schedule_reminder(reminder):
 
 def schedule_morning_message():
     return scheduler.add_job(telegram.send_morning_message, __set_cron(hour=9, minute=0))
-
-def schedule_scene_action(scene_action):
-    func = {
-        "on": mqtt.power_on,
-        "off": mqtt.power_off
-    }.get(scene_action.action_type)
-
-    if func == None:
-        raise Exception("Invalid action_type")
-
-    return scheduler.add_job(func, IntervalTrigger(days=1),
-                             args=[scene_action.device],
-                             next_run_time=scene_action.start_time)
 
 def delete_job(job_id):
     try:

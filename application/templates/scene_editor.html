@@ -53,20 +53,13 @@
     </div>
 
     <div style="text-align: center; margin-top: 50px;">
-      <div id="editor" ondragover="allowDrop(event)">
-        {% for action in sequence %}
-          <div class="scene-action-card" data="{{ action.device.name }} {{ action.action_type }} {{ action.start_time }}"></div>
-        {% endfor %}
-      </div>
+      <div id="editor" ondrop="drop(event)" ondragover="allowDrop(event)"></div>
 
       <br>
       <br>
 
-      <button id="clear" class="button-81" style="width: 10%; margin-right: 20px;" role="button" onclick="clearEditor()">
+      <button id="clear" class="button-81" style="width: 10%;" role="button" onclick="clearEditor()">
         <i class="fas fa-eraser"></i> <!-- eraser icon -->
-      </button>
-      <button id="submit" scene_id="{{ scene_id }}" class="button-81" style="width: 10%;" role="button" onclick="addSequence(this)">
-        <i class="fas fa-plus"></i> <!-- plus icon -->
       </button>
 
       <br>
@@ -74,7 +67,8 @@
       <br>
 
       {% for action in scene_actions %}
-        <div style="width: 15%;" action-id="{{ action.id }}" class="scene-action-card" draggable="true" ondragstart="drag(event)" data="{{ action.device.name }} {{ action.action_type }} {{ action.start_time }}">
+        <div style="width: 20%;" id="{{ action.id }}" class="scene-action-card" draggable="true" ondragstart="drag(event)">
+          {{ action.device.name }} {{ action.action_type }} @ {{ action.start_time }}
           <button id="delete" class="button-81" role="button" scene_action_id="{{ action.id }}" style="margin-left: 10px; background-color: rgb(165, 96, 111); transform: scale(0.6);" onclick="deleteSceneAction(this)">
             <i class="fas fa-trash-alt"></i> <!-- trash can icon -->
           </button>
@@ -174,76 +168,24 @@
         // Function to handle the drag start event
         function drag(event) {
             event.dataTransfer.setData("text", event.target.innerText);
-            const actionId = event.target.getAttribute("action-id");
-            event.dataTransfer.setData("action-id", actionId);
         }
 
-        var sceneActions = [];
-        var count = 0;
-        const editor = document.getElementById("editor");
-
-        editor.addEventListener("drop", (event) => {
-          event.preventDefault();
-          count++;
-          const data = event.dataTransfer.getData("text");
-          const sceneActionCard = document.createElement("div");
-          sceneActionCard.className = "scene-action-card";
-          sceneActionCard.innerText = count + ". " + data;
-
-          event.currentTarget.appendChild(sceneActionCard);
-          const actionId = event.dataTransfer.getData("action-id");
-          sceneActions.push(actionId);
-        });
+        // Function to handle the drop event
+        function drop(event) {
+            event.preventDefault();
+            const data = event.dataTransfer.getData("text");
+            const sceneActionCard = document.createElement("div");
+            sceneActionCard.className = "scene-action-card";
+            sceneActionCard.innerText = data;
+            event.target.appendChild(sceneActionCard);
+        }
 
         function clearEditor() {
-          sceneActions = []
-          count = 0;
+          const container = document.getElementById("editor");
 
-          while (editor.firstChild) {
-              editor.removeChild(editor.firstChild);
+          while (container.firstChild) {
+              container.removeChild(container.firstChild);
           }
-        }
-
-        function addSequence(button) {
-          sceneId = button.getAttribute("scene_id")
-
-          fetch('/scene-editor/scene-action/sequence/add', {
-            method: 'PUT',
-            body: JSON.stringify({
-                scene_id: sceneId,
-                scene_actions: sceneActions   
-            }),
-            headers: {
-                'Content-Type': 'application/json'
-            }
-            })
-            .then((response) => {
-            if (response.ok) {
-                return response.json();
-            }
-            return response.json().then(data => {
-                throw new Error(data.error);
-            });
-            })
-            .then(data => {
-            if (data.success) {
-                const msg = data.success;
-                localStorage.setItem('sceneActionAddMessage', msg);
-                location.reload();
-            }
-            })
-            .catch((error) => {
-            // Clear the input boxes
-            sensor.value = "";
-            actionType.value = "";
-            actionParam.value = "";
-
-            document.body.style.cursor = 'default';
-            updateSnackbar(error, "red");
-            })
-            .finally(() => {
-            document.body.style.cursor = 'default';
-            });
         }
 
         function addSceneAction(button) {
@@ -293,6 +235,7 @@
             sensor.value = "";
             actionType.value = "";
             actionParam.value = "";
+            description.value = "";
 
             document.body.style.cursor = 'default';
             updateSnackbar(error, "red");
@@ -369,15 +312,6 @@
           } else if (sceneActionDeleteMessage) {
             updateSnackbar(sceneActionDeleteMessage, "rgb(121, 196, 137)");
             localStorage.removeItem('sceneActionDeleteMessage');
-          }
-
-          action_cards = document.getElementsByClassName("scene-action-card")
-
-          for (const card of action_cards) {
-            data = card.getAttribute("data").split(" ")
-            start = data[3].substring(0, 5);
-            description = data[0] + " " + data[1] + " @ " + start;
-            card.insertAdjacentHTML("afterbegin", description);
           }
 
           func = function() {

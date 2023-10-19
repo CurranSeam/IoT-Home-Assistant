@@ -1,7 +1,7 @@
 import datetime
 import json
 from peewee import (Model, BlobField, BooleanField, CharField, DateTimeField,
-                    ForeignKeyField, ManyToManyField, TextField)
+                    ForeignKeyField, IntegerField, TextField)
 
 from application import database
 from application.models.user import User
@@ -18,7 +18,7 @@ class Scene(BaseModel):
     enabled = BooleanField(default=True)
     status = CharField(default="Idle")
     created_at = DateTimeField(default=datetime.datetime.now)
-    user = ForeignKeyField(User, backref='scenes', on_delete='CASCADE')
+    user = ForeignKeyField(User, backref='scenes', on_delete='CASCADE') 
 
 class SceneAction(BaseModel):
     scene = ForeignKeyField(Scene, backref='actions', on_delete='CASCADE')
@@ -32,3 +32,5 @@ class SceneAction(BaseModel):
 
     action_type = CharField()
     action_param = BlobField(null=True)
+
+    sequence_order = IntegerField(null=True)

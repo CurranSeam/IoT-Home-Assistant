@@ -116,12 +116,6 @@ def unsubscribe(component):
 def power_toggle(device):
     __publish(device, "POWER", "TOGGLE")
 
-def power_on(device):
-    __publish(device, "POWER", "ON")
-
-def power_off(device):
-    __publish(device, "POWER", "OFF")
-
 def write_power_state(device):
     __publish(device, "POWER")
 

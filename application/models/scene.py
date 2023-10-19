@@ -18,7 +18,7 @@ class Scene(BaseModel):
     enabled = BooleanField(default=True)
     status = CharField(default="Idle")
     created_at = DateTimeField(default=datetime.datetime.now)
-    user = ForeignKeyField(User, backref='scenes', on_delete='CASCADE') 
+    user = ForeignKeyField(User, backref='scenes', on_delete='CASCADE')
 
 class SceneAction(BaseModel):
     scene = ForeignKeyField(Scene, backref='actions', on_delete='CASCADE')

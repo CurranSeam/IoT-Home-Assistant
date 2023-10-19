@@ -37,9 +37,14 @@ def get_scene_actions_by_user(user):
     query = SceneAction.select().join(
         Scene,
         on=(SceneAction.scene == Scene.id),
-    ).where(Scene.user== user)
+    ).where(Scene.user == user)
 
     return query
+
+def get_sequence(scene):
+   return SceneAction.select().where(
+       SceneAction.scene == scene & SceneAction.sequence_order.is_null(False)
+       ).order_by(SceneAction.sequence_order)
 
 def add_scene_action(scene, device, action_type, action_param=None,
                      sensor=None, start_time=None, end_time=None):
@@ -51,5 +56,11 @@ def add_scene_action(scene, device, action_type, action_param=None,
 
 def delete_scene_action(scene_action):
     scene_action.delete_instance()
+
+    return scene_action
+
+def update_sequence_order(scene_action, order):
+    scene_action.sequence_order = order
+    scene_action.save()
 
     return scene_action

@@ -1,5 +1,4 @@
 from application.models.scene import Scene, SceneAction
-from application.repository import user as User
 from application.utils.exception_handler import log_exception
 
 def get_scene_action(id=None, scene=None, user=None):
@@ -61,6 +60,12 @@ def delete_scene_action(scene_action):
 
 def update_sequence_order(scene_action, order):
     scene_action.sequence_order = order
+    scene_action.save()
+
+    return scene_action
+
+def update_job_id(scene_action, job_id):
+    scene_action.job_id = job_id
     scene_action.save()
 
     return scene_action

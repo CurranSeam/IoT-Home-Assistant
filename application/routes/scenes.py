@@ -1,5 +1,6 @@
 from application.services import scheduler
 from application.repository import (scene as Scene,
+                                    scene_action as SceneAction,
                                     user as User)
 from application.utils.exception_handler import try_exec
 
@@ -33,6 +34,26 @@ def add_scene():
 
     Scene.add_scene(user, scene_name, description)
     return jsonify({'success': f'{scene_name} scene created successfully'})
+
+@bp.route('/scenes/<int:scene_id>/toggle', methods=["PUT"])
+def toggle_scene(scene_id):
+    data = request.get_json()
+    enabled = int(data['enabled'])
+    scene = Scene.get_scene(id=scene_id)
+
+    if not enabled:
+        Scene.update_enabled(scene, False)
+    else:
+        Scene.update_enabled(scene, True)
+
+    for scene_action in scene.actions:
+        if not enabled:
+            scheduler.delete_job(scene_action.job_id)
+        else:
+            job = scheduler.schedule_scene_action(scene_action)
+            SceneAction.update_job_id(scene_action, job.id)
+
+    return jsonify({'success': f'{scene.name} scene toggled successfully :O)'}), 200
 
 @bp.route('/scenes/delete', methods=["POST"])
 def delete_scene():

@@ -228,7 +228,6 @@
           if (!response.error) {
             var dropdown = $("#sensorDropDown");
             dropdown.empty();
-            console.log(response)
             $.each(response, function(key, value) {
               dropdown.append($("<option></option>").attr("value", value).text(value));
             });

@@ -69,6 +69,8 @@ def add_action_to_sequence():
 
             if error:
                 return jsonify({'error': "Scheduling for scene actions was unsuccessful"}), 500
+            
+            SceneAction.update_job_id(scene_action, job.id)
 
     for action in scene.actions:
         if str(action.id) not in action_ids:
@@ -82,6 +84,7 @@ def delete_scene_action():
     action_id = data['scene_action_id']
     scene_action = SceneAction.get_scene_action(id=action_id)
 
+    scheduler.delete_job(scene_action.job_id)
     SceneAction.delete_scene_action(scene_action)
 
     return jsonify({'success': f'Scene action successfully deleted :O)'}), 200

@@ -34,3 +34,4 @@ class SceneAction(BaseModel):
     action_param = BlobField(null=True)
 
     sequence_order = IntegerField(null=True)
+    job_id = IntegerField(null=True)

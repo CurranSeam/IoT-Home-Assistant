@@ -1,5 +1,4 @@
 from application.models.reminder import Reminder
-from application.repository import user as User
 from application.utils.exception_handler import log_exception
 
 def get_reminder(id=None, user=None):

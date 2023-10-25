@@ -169,6 +169,31 @@
         });
       }
 
+      function toggleScene(checkbox) {
+        var scene_id = checkbox.getAttribute("scene_id");
+
+        // Send an HTTP PUT request to the backend to toggle the scene
+        fetch('/scenes/' + scene_id + '/toggle', {
+          method: 'PUT',
+          body: JSON.stringify({
+            enabled: checkbox.checked
+          }),
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        })
+        .then((response) => {
+          return response.json();
+        })
+        .then((data) => {
+          updateSnackbar(data.success, "rgb(121, 196, 137)")
+        })
+        .catch((error) => {
+          // Handle any errors
+          updateSnackbar(error, "red")
+        });
+      }
+
       function deleteScene(button) {
         var scene_id = button.getAttribute('scene_id');
         var scene_name = button.getAttribute('scene_name');

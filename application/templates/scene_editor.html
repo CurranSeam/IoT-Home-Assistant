@@ -55,7 +55,7 @@
     <div style="text-align: center; margin-top: 50px;">
       <div id="editor" ondragover="allowDrop(event)">
         {% for action in sequence %}
-          <div class="scene-action-card" data="{{ action.device.name }} {{ action.action_type }} {{ action.start_time }}"></div>
+          <div class="scene-action-card" action-id="{{ action.id }}" editor-card="" data="{{ action.device.name }} {{ action.action_type }} {{ action.start_time }}"></div>
         {% endfor %}
       </div>
 
@@ -75,7 +75,7 @@
 
       {% for action in scene_actions %}
         <div style="width: 15%;" action-id="{{ action.id }}" class="scene-action-card" draggable="true" ondragstart="drag(event)" data="{{ action.device.name }} {{ action.action_type }} {{ action.start_time }}">
-          <button id="delete" class="button-81" role="button" scene_action_id="{{ action.id }}" style="margin-left: 10px; background-color: rgb(165, 96, 111); transform: scale(0.6);" onclick="deleteSceneAction(this)">
+          <button id="delete" class="button-81" role="button" scene_action_id="{{ action.id }}" style="margin: 0 0 0 10px; background-color: rgb(165, 96, 111); transform: scale(0.6);" onclick="deleteSceneAction(this)">
             <i class="fas fa-trash-alt"></i> <!-- trash can icon -->
           </button>
         </div>
@@ -166,44 +166,6 @@
     <div id="snackbar">Update successful :O)</div>
 
     <script>
-        // Function to allow dropping a scene action card into the editor
-        function allowDrop(event) {
-            event.preventDefault();
-        }
-
-        // Function to handle the drag start event
-        function drag(event) {
-            event.dataTransfer.setData("text", event.target.innerText);
-            const actionId = event.target.getAttribute("action-id");
-            event.dataTransfer.setData("action-id", actionId);
-        }
-
-        var sceneActions = [];
-        var count = 0;
-        const editor = document.getElementById("editor");
-
-        editor.addEventListener("drop", (event) => {
-          event.preventDefault();
-          count++;
-          const data = event.dataTransfer.getData("text");
-          const sceneActionCard = document.createElement("div");
-          sceneActionCard.className = "scene-action-card";
-          sceneActionCard.innerText = count + ". " + data;
-
-          event.currentTarget.appendChild(sceneActionCard);
-          const actionId = event.dataTransfer.getData("action-id");
-          sceneActions.push(actionId);
-        });
-
-        function clearEditor() {
-          sceneActions = []
-          count = 0;
-
-          while (editor.firstChild) {
-              editor.removeChild(editor.firstChild);
-          }
-        }
-
         function addSequence(button) {
           document.body.style.cursor = 'wait';
           sceneId = button.getAttribute("scene_id")
@@ -360,6 +322,11 @@
             }
         });
 
+        var order = 0;
+        var count = 0;
+        var sceneActions = [];
+        const editor = document.getElementById("editor");
+
         window.onload = function() {
           const sceneActionAddMessage = localStorage.getItem('sceneActionAddMessage');
           const sceneActionDeleteMessage = localStorage.getItem('sceneActionDeleteMessage');
@@ -372,12 +339,20 @@
             localStorage.removeItem('sceneActionDeleteMessage');
           }
 
-          action_cards = document.getElementsByClassName("scene-action-card")
+          var action_cards = document.getElementsByClassName("scene-action-card");
 
           for (const card of action_cards) {
             data = card.getAttribute("data").split(" ")
             start = data[3].substring(0, 5);
-            description = data[0] + " " + data[1] + " @ " + start;
+
+            if (!card.hasAttribute("editor-card")) {
+              description = data[0] + " " + data[1] + " @ " + start;
+            } else {
+              order++;
+              count++;
+              description = order + ". " + data[0] + " " + data[1] + " @ " + start;
+              sceneActions.push(card.getAttribute("action-id"))
+            }
             card.insertAdjacentHTML("afterbegin", description);
           }
 
@@ -392,6 +367,40 @@
 
           setInterval(() => {func()}, 30000);
         };
+
+        // Function to allow dropping a scene action card into the editor
+        function allowDrop(event) {
+            event.preventDefault();
+        }
+
+        // Function to handle the drag start event
+        function drag(event) {
+            event.dataTransfer.setData("text", event.target.innerText);
+            const actionId = event.target.getAttribute("action-id");
+            event.dataTransfer.setData("action-id", actionId);
+        }
+
+        editor.addEventListener("drop", (event) => {
+          event.preventDefault();
+          count++;
+          const data = event.dataTransfer.getData("text");
+          const sceneActionCard = document.createElement("div");
+          sceneActionCard.className = "scene-action-card";
+          sceneActionCard.innerText = count + ". " + data;
+
+          event.currentTarget.appendChild(sceneActionCard);
+          const actionId = event.dataTransfer.getData("action-id");
+          sceneActions.push(actionId);
+        });
+
+        function clearEditor() {
+          sceneActions = []
+          count = 0;
+
+          while (editor.firstChild) {
+              editor.removeChild(editor.firstChild);
+          }
+        }
 
         function updateSnackbar(message, color) {
             var x = document.getElementById("snackbar");

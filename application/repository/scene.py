@@ -1,5 +1,4 @@
 from application.models.scene import Scene
-from application.repository import user as User
 from application.utils.exception_handler import log_exception
 
 def get_scene(id=None, user=None):
@@ -41,5 +40,11 @@ def add_scene(user, name, description=None):
 
 def delete_scene(scene):
     scene.delete_instance()
+
+    return scene
+
+def update_enabled(scene, enabled):
+    scene.enabled = enabled
+    scene.save()
 
     return scene

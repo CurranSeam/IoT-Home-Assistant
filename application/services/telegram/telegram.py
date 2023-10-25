@@ -1,9 +1,10 @@
-import hashlib
 import logging
 import requests
 import json
+import traceback
 
-from telegram.ext import (ApplicationBuilder, CommandHandler, CallbackQueryHandler)
+from telegram import Update
+from telegram.ext import (ApplicationBuilder, CommandHandler, CallbackQueryHandler, ContextTypes)
 
 from application.services import svc_common
 from application.services import security as vault
@@ -15,7 +16,7 @@ from application.services.telegram.bot import trivia as Trivia
 
 from application.repository import user as User
 
-from application.utils.exception_handler import try_exec
+from application.utils.exception_handler import try_exec, log_exception
 
 # Utility functions
 def start_bot():
@@ -48,6 +49,8 @@ def start_bot():
     application.add_handler(CallbackQueryHandler(device.button_cb, pattern='^device_'))
     application.add_handler(CallbackQueryHandler(Trivia.multiple_choice_buttons_cb, pattern='^trivia_'))
     application.add_handler(CallbackQueryHandler(Trivia.configuration_buttons_cb, pattern='^trivia-'))
+
+    application.add_error_handler(error_handler)
 
     application.run_polling()
 
@@ -160,3 +163,23 @@ def __handle_error(response, func, *args):
 
         # Raise exception for exception handler.
         raise Exception(f"HTTPError: {response}")
+
+async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE):
+    update_str = update.to_dict() if isinstance(update, Update) else str(update)
+    tb_list = traceback.format_exception(None, context.error, context.error.__traceback__)
+    tb_string = "".join(tb_list)
+
+    message = (
+        "An exception was raised while handling an update\n"
+        f"update = {json.dumps(update_str, indent=2, ensure_ascii=False)}"
+        "\n\n"
+        f"context.chat_data = {str(context.chat_data)}\n\n"
+        f"context.user_data = {str(context.user_data)}\n\n"
+        f"{tb_string}"
+    )
+
+    log_exception(message)
+
+    if isinstance(update, Update):
+        error_msg = svc_common.get_bot_error_message()
+        await context.bot.send_message(chat_id=update.effective_chat.id, text=error_msg)

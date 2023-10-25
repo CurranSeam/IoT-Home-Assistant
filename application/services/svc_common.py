@@ -36,10 +36,10 @@ def get_bot_greet_msg():
     return "Kabira speaking..."
 
 def get_bot_morning_msg(user_first_name):
-    return f"Good Morning {user_first_name}! :O)"
+    return f"Good Morning {user_first_name}! 😀⛅️"
 
 def get_bot_error_message():
-    return "Something went wrong :O(\nPlease try again."
+    return "Something went wrong 😔\nPlease try again."
 
 def get_opt_message(user, opt_in, service, url=None):
     verbs = {

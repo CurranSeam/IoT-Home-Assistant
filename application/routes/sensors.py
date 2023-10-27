@@ -106,7 +106,6 @@ def add_sensor():
                         # Subscribe to topics and update data before sensor is rebooted.
                         if idx == len(data) - 1:
                             mqtt.subscribe(t_sensor)
-                            mqtt.update_sensor_temp(t_sensor)
 
                     return jsonify({'success': f'Sensor successfully added for {user_firstname} :O)'}), 200
             except requests.exceptions.RequestException:

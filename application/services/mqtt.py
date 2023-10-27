@@ -76,19 +76,25 @@ def parse_device_message(msg):
         DeviceRepo.update_status(component_id, status)
 
 def parse_sensor_message(msg):
-    component_data, _ = msg.topic.split("/")
-    _, component_id, _ = component_data.split("_")
+    component_data = msg.topic.split("/")
+    _, component_id, _ = component_data[0].split("_")
 
     sensor = TemperatureRepo.get_sensor(id=component_id)
     payload = json.loads(msg.payload)
-    temperature_data = payload["temperature:0"]
 
-    temperature = {
-        "F" : temperature_data["tF"],
-        "C" : temperature_data["tC"]
-    }.get(sensor.temp_unit)
+    try:
+        if payload["method"] == "NotifyFullStatus":
+            temperature_data = payload["params"]["temperature:0"]
 
-    TemperatureRepo.update_temperature(sensor, temperature)
+            temperature = {
+                "F" : temperature_data["tF"],
+                "C" : temperature_data["tC"]
+            }.get(sensor.temp_unit)
+
+            TemperatureRepo.update_temperature(sensor, temperature)
+    except KeyError:
+        # Ignore other messages
+        pass
 
 # Utility functions
 def start():
@@ -130,9 +136,6 @@ def update_telemetry_period(device, new_period):
 
     DeviceRepo.update_telemetry_period(device.id, new_period)
 
-def update_sensor_temp(sensor):
-    __publish(sensor, payload="status_update")
-
 def __publish(component, cmd="", payload=""):
     message = ""
 
@@ -148,7 +151,7 @@ def __manage_subscriptions(component, action):
     topics = []
 
     if isinstance(component, Device):
-        # Sensor telemetry topic
+        # Device's telemetry topic
         tele_topic = f'devices_{component.id}_{component.name}/tele/SENSOR'
 
         # Topic that contains power state dump and other info
@@ -157,10 +160,10 @@ def __manage_subscriptions(component, action):
         topics = [(tele_topic, 0), (result_topic, 0)]
 
     elif isinstance(component, TemperatureSensor):
-        # Topic that contains device status as a response to
-        # when status_update is published on <...>/command
-        status_topic = f'sensors_{component.id}_{component.sensor.name}/status'
-        topics = [(status_topic, 0)]
+        # Topic that temperature sensor publishes on via event changes
+        events_topic = f'sensors_{component.id}_{component.sensor.name}/events/rpc'
+
+        topics = [(events_topic, 0)]
 
     else:
         log_exception("MQTT __manage_subscriptions: Unsupported component type")

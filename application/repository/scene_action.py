@@ -30,20 +30,16 @@ def get_scene_action(id=None, scene=None, user=None):
     return reminder()
 
 def get_scene_actions():
-    return SceneAction.select().order_by(SceneAction.Scene.user.id)
-
-def get_scene_actions_by_user(user):
-    query = SceneAction.select().join(
-        Scene,
-        on=(SceneAction.scene == Scene.id),
-    ).where(Scene.user == user)
-
-    return query
+    return SceneAction.select()
 
 def get_sequence(scene):
-   return SceneAction.select().where(
-       SceneAction.scene == scene & SceneAction.sequence_order.is_null(False)
-       ).order_by(SceneAction.sequence_order)
+    sequence = []
+
+    for action in scene.actions:
+       if action.enabled:
+           sequence.append(action)
+
+    return sequence
 
 def add_scene_action(scene, device, action_type, action_param=None,
                      sensor=None, start_time=None, end_time=None):
@@ -64,8 +60,26 @@ def update_sequence_order(scene_action, order):
 
     return scene_action
 
+def update_enabled(scene_action, enabled):
+    scene_action.enabled = enabled
+    scene_action.save()
+
+    return scene_action
+
 def update_job_id(scene_action, job_id):
     scene_action.job_id = job_id
+    scene_action.save()
+
+    return scene_action
+
+def update_start_time(scene_action, start_time):
+    scene_action.start_time = start_time
+    scene_action.save()
+
+    return scene_action
+
+def update_end_time(scene_action, end_time):
+    scene_action.end_time = end_time
     scene_action.save()
 
     return scene_action

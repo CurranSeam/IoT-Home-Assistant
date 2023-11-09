@@ -26,18 +26,17 @@ def add_reminder():
 
     user_id = data['user_id']
     title = data['title']
-    date = data['date']
-    time = data['time']
+    date_time = data['datetime']
     description = data['description']
     recurrence = data['recurrence']
 
     user = User.get_user(id=user_id)
 
-    if date == '' or time == '' or title == '':
-        return jsonify({'error': 'Title, Date, and Time fields are required'}), 400
+    if date_time == '' or title == '':
+        return jsonify({'error': 'Title and DateTime fields are required'}), 400
     else:
         # Combine date and time inputs into a datetime object
-        datetime_str = f"{date} {time}"
+        datetime_str = f"{date_time.split('T')[0]} {date_time.split('T')[1]}"
         reminder_datetime = datetime.datetime.strptime(datetime_str, '%Y-%m-%d %H:%M')
 
         reminder = Reminder.add_reminder(user, title, reminder_datetime, recurrence, description)

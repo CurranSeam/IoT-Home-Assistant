@@ -1,5 +1,8 @@
-import application.repository.reminder as Reminder
+import datetime
 
+from application.repository import (reminder as Reminder,
+                                    scene_action as SceneAction,
+                                    temperature_sensor as TemperatureSensor)
 from application.services import mqtt, svc_common
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.schedulers.base import JobLookupError
@@ -16,6 +19,10 @@ scheduler = BackgroundScheduler()
 def start():
     for reminder in Reminder.get_reminders():
         schedule_reminder(reminder)
+
+    for action in SceneAction.get_scene_actions():
+        if action.enabled:
+            schedule_scene_action(action)
 
     schedule_morning_message()
 
@@ -69,16 +76,26 @@ def schedule_morning_message():
 
 def schedule_scene_action(scene_action):
     func = {
-        "on": mqtt.power_on,
-        "off": mqtt.power_off
+        "on" : mqtt.power_on,
+        "off" : mqtt.power_off,
+        "temperature-control" : __regulate_temperature
     }.get(scene_action.action_type)
 
     if func == None:
         raise Exception("Invalid action_type")
 
+    if func == __regulate_temperature:
+        job = scheduler.add_job(func, IntervalTrigger(minutes=1),
+                                args=[scene_action],
+                                next_run_time=scene_action.start_time)
+
+        SceneAction.update_job_id(scene_action, job.id)
+        return job
+
     return scheduler.add_job(func, IntervalTrigger(days=1),
                              args=[scene_action.device],
-                             next_run_time=scene_action.start_time)
+                             next_run_time=scene_action.start_time,
+                             misfire_grace_time=86400)
 
 def delete_job(job_id):
     try:
@@ -90,3 +107,30 @@ def __set_cron(year="*", month="*", day="*",
                hour="*", minute="*", second="0"):
     return CronTrigger(year=year, month=month, day=day,
                        hour=hour, minute=minute, second=second)
+
+def __regulate_temperature(scene_action):
+    if datetime.datetime.now() >= scene_action.end_time:
+        mqtt.power_off(scene_action.device)
+        delete_job(scene_action.job_id)
+
+        tomorrow_start = scene_action.start_time + datetime.timedelta(days=1)
+        tomorrow_end = scene_action.end_time + datetime.timedelta(days=1)
+
+        SceneAction.update_start_time(scene_action, tomorrow_start)
+        SceneAction.update_end_time(scene_action, tomorrow_end)
+
+        job = scheduler.add_job(__regulate_temperature, IntervalTrigger(minutes=1),
+                                args=[scene_action],
+                                next_run_time=tomorrow_start)
+
+        SceneAction.update_job_id(scene_action, job.id)
+        return job
+
+    temperature_sensor = TemperatureSensor.get_sensor_via_base(scene_action.sensor)
+
+    if temperature_sensor.temperature < scene_action.action_param: 
+        mqtt.power_on(scene_action.device)
+    else:
+        mqtt.power_off(scene_action.device)
+
+    return scheduler.get_job(scene_action.job_id)

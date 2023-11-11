@@ -72,8 +72,7 @@
                 <tr>
                     <th>User</th>
                     <th>Reminder Title</th>
-                    <th>Date</th>
-                    <th>Time</th>
+                    <th>Date and Time</th>
                     <th>Recurrence</th>
                     <th>Description</th>
                 </tr>
@@ -90,10 +89,7 @@
                         <input type="text" id="titleInput" placeholder="Clean thermonuclear reactor" required>
                       </td>
                       <td>
-                        <input type="date" id="dateInput" required>
-                      </td>
-                      <td>
-                        <input type="time" id="timeInput" name="time" required>
+                        <input type="datetime-local" id="datetimeInput" required>
                       </td>
                       <td>
                         <select id="recurrenceDropDown" name="recurrence">
@@ -137,8 +133,7 @@
             var reminderData = {
               user_id: document.getElementById("userDropDown").value,
               title: document.getElementById("titleInput").value,
-              date: document.getElementById("dateInput").value,
-              time: document.getElementById("timeInput").value,
+              datetime: document.getElementById("datetimeInput").value,
               recurrence: document.getElementById("recurrenceDropDown").value,
               description: document.getElementById("descriptionInput").value
             };
@@ -197,6 +192,17 @@
             updateSnackbar(reminderDeleteMessage, "rgb(121, 196, 137)");
             localStorage.removeItem('reminderDeleteMessage');
           }
+
+          func = function() {
+            var now = new Date();
+
+            now.setSeconds(0);
+            now.setMilliseconds(0);
+
+            document.getElementById('datetimeInput').valueAsNumber = now.getTime() - now.getTimezoneOffset() * 60000;
+          }
+
+          func()
         };
 
       function updateSnackbar(message, color) {

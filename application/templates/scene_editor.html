@@ -50,12 +50,14 @@
 
     <div style="text-align: center;">
         Drag and drop scene action cards to create a sequence for your scene.
+        <br><br><br><br>
+        <h2>{{ scene_name }}</h2>
     </div>
 
-    <div style="text-align: center; margin-top: 50px;">
+    <div style="text-align: center; margin-top: 5px;">
       <div id="editor" ondragover="allowDrop(event)">
         {% for action in sequence %}
-          <div class="scene-action-card" action-id="{{ action.id }}" editor-card="" data="{{ action.device.name }} {{ action.action_type }} {{ action.start_time }}"></div>
+          <div class="scene-action-card" style="white-space: pre-wrap;" action-id="{{ action.id }}" editor-card="" data="{{ action.device.name }}?{{ action.action_type }}?{{ action.start_time }}?{{ action.end_time }}"></div>
         {% endfor %}
       </div>
 
@@ -74,7 +76,7 @@
       <br>
 
       {% for action in scene_actions %}
-        <div style="width: 15%;" action-id="{{ action.id }}" class="scene-action-card" draggable="true" ondragstart="drag(event)" data="{{ action.device.name }} {{ action.action_type }} {{ action.start_time }}">
+        <div style="width: 15%;" action-id="{{ action.id }}" class="scene-action-card" draggable="true" ondragstart="drag(event)" data="{{ action.device.name }}?{{ action.action_type }}?{{ action.start_time }}?{{ action.end_time }}">
           <button id="delete" class="button-81" role="button" scene_action_id="{{ action.id }}" style="margin: 0 0 0 10px; background-color: rgb(165, 96, 111); transform: scale(0.6);" onclick="deleteSceneAction(this)">
             <i class="fas fa-trash-alt"></i> <!-- trash can icon -->
           </button>
@@ -93,8 +95,8 @@
     <div style="text-align: center;">
       A scene action is a simple automated piece of a scene. <br><br>
       <div>
-        A night heating scene could comprise of 3 actions: <br>
-        - Start heater at 10:15 PM <br> - Keep temperature above some value <br> - Turn off heater at 10:00 AM
+        A night-time scene could comprise of 3 actions: <br>
+        - Turn on lights at 10:00 PM <br> - Temperature control from 10:15 PM - 10:00 AM the next day <br> - Turn off lights at 11:30 PM
       </div>
     </div>
 
@@ -108,22 +110,22 @@
             <th>Device</th>
             <th>Action Type</th>
             <th>Start</th>
-            <th>End</th>
+            <th style="display: none;" id="endTimeHeader">End</th>
           </tr>
           <tbody>
             <tr>
               <td>
-                <select id="sensorTypeDropdown">
+                <select id="sensorTypeDropdown" onchange=changeSensors()>
                   <option value="">None</option>
                   <option value="temperature">Temperature</option>
                 </select>
               </td>
               <td style="display: none;">
-                <select id="sensorDropdown">
+                <select id="sensorDropdown" t_sensors='{{ t_sensors | tojson }}'>
                 </select>
               </td>
               <td style="display: none;">
-                <input type="number" id="actionParamInput">
+                <input type="number" id="actionParamInput" min="70" max="80" step="0.1">
               </td>
               <td>
                 <select id="deviceSelect" required>
@@ -139,10 +141,10 @@
                 </select>
               </td>
               <td>
-                <input type="time" id="startTimeInput" required>
+                <input type="datetime-local" id="startTimeInput" required>
               </td>
-              <td>
-                <input type="time" id="endTimeInput" required>
+              <td style="display: none;">
+                <input type="datetime-local" id="endTimeInput" required>
               </td>
             </tr>
             <tr>
@@ -296,31 +298,50 @@
             });
         }
 
-        // Get references to the sensor type dropdown and specific input field rows
-        const sensorTypeDropdown = document.getElementById("sensorTypeDropdown");
+        function changeSensors() {
+          // Get references to the sensor type dropdown and specific input field rows
+          const sensorTypeDropdown = document.getElementById("sensorTypeDropdown");
+          const sensorHeader = document.getElementById("sensorHeader");
+          const actionParamHeader = document.getElementById("actionParamHeader");
+          const sensorDropdown = document.getElementById("sensorDropdown").parentElement;
+          const sensors = document.getElementById("sensorDropdown");
+          const actionParamInput = document.getElementById("actionParamInput").parentElement;
+          const actionInput = document.getElementById("actionInput");
+          const endTimeHeader = document.getElementById("endTimeHeader")
+          const endTimeInput = document.getElementById("endTimeInput").parentElement
 
-        const sensorHeader = document.getElementById("sensorHeader");
-        const actionParamHeader = document.getElementById("actionParamHeader");
+          const selectedSensorType = sensorTypeDropdown.value;
 
-        const sensorDropdown = document.getElementById("sensorDropdown").parentElement;
-        const actionParamInput = document.getElementById("actionParamInput").parentElement;
+          sensorHeader.style.display = "none";
+          sensorDropdown.style.display = "none";
 
-        sensorTypeDropdown.addEventListener("change", function() {
-            const selectedSensorType = sensorTypeDropdown.value;
+          actionParamHeader.style.display = "none";
+          actionParamInput.style.display = "none";
 
-            sensorHeader.style.display = "none";
-            sensorDropdown.style.display = "none";
+          endTimeHeader.style.display = "none";
+          endTimeInput.style.display = "none";
 
-            actionParamHeader.style.display = "none";
-            actionParamInput.style.display = "none";
+          if (selectedSensorType === "temperature") {
+            sensorHeader.style.display = "table-cell";
+            sensorDropdown.style.display = "table-cell";
+            actionParamHeader.style.display = "table-cell";
+            actionParamInput.style.display = "table-cell";
+            endTimeHeader.style.display = "table-cell";
+            endTimeInput.style.display = "table-cell";
 
-            if (selectedSensorType === "temperature") {
-              sensorHeader.style.display = "table-cell";
-              sensorDropdown.style.display = "table-cell";
-              actionParamHeader.style.display = "table-cell";
-              actionParamInput.style.display = "table-cell";
+            t_sensors = JSON.parse(sensors.getAttribute("t_sensors"))
+            for (let i = 0; i < t_sensors.length; i++) {
+              sensors.options[sensors.options.length] = new Option(t_sensors[i].name, t_sensors[i].id);
             }
-        });
+            actionInput.options.length = 0;
+            actionInput.options[actionInput.options.length] = new Option("Temperature control", "temperature-control");
+          } else {
+            sensors.options.length = 0;
+            actionInput.options.length = 0;
+            actionInput.options[0] = new Option("On", "on");
+            actionInput.options[1] = new Option("Off", "off");
+          }
+        }
 
         var order = 0;
         var count = 0;
@@ -342,30 +363,32 @@
           var action_cards = document.getElementsByClassName("scene-action-card");
 
           for (const card of action_cards) {
-            data = card.getAttribute("data").split(" ")
-            start = data[3].substring(0, 5);
+            data = card.getAttribute("data").split("?")
+            start = data[2].substring(11, 16);
+            end = data[3].substring(11, 16);
 
             if (!card.hasAttribute("editor-card")) {
-              description = data[0] + " " + data[1] + " @ " + start;
+              description = data[0] + "<br>" + data[1] + "<br>" + start + " - " + end + "<br>";
+              card.insertAdjacentHTML("afterbegin", description);
             } else {
+              card.style = "white-space: pre-wrap;"
               order++;
-              count++;
-              description = order + ". " + data[0] + " " + data[1] + " @ " + start;
+              description = order + ". " + data[0] + "\n" + data[1] + "\n" + start + " - " + end;
               sceneActions.push(card.getAttribute("action-id"))
+              card.insertAdjacentText("afterbegin", description);
             }
-            card.insertAdjacentHTML("afterbegin", description);
           }
 
           func = function() {
-            var date = new Date();
-            var currentTime = date.toString().substring(16,21);
+            var now = new Date();
 
-            document.getElementById('startTimeInput').value = currentTime;
+            now.setSeconds(0);
+            now.setMilliseconds(0);
+
+            document.getElementById('startTimeInput').valueAsNumber = now.getTime() - now.getTimezoneOffset() * 60000;
           }
 
           func()
-
-          setInterval(() => {func()}, 30000);
         };
 
         // Function to allow dropping a scene action card into the editor
@@ -376,21 +399,46 @@
         // Function to handle the drag start event
         function drag(event) {
             event.dataTransfer.setData("text", event.target.innerText);
+
             const actionId = event.target.getAttribute("action-id");
+            const startTime = event.target.getAttribute("data").split("?")[2];
+
             event.dataTransfer.setData("action-id", actionId);
+            event.dataTransfer.setData("start-time", startTime);
         }
 
         editor.addEventListener("drop", (event) => {
+          sceneActions = [];
           event.preventDefault();
           count++;
           const data = event.dataTransfer.getData("text");
           const sceneActionCard = document.createElement("div");
+
+          sceneActionCard.style = "white-space: pre-wrap;"
+          sceneActionCard.textContent = count + ". " + data;
           sceneActionCard.className = "scene-action-card";
-          sceneActionCard.innerText = count + ". " + data;
+          sceneActionCard.setAttribute("start-time", event.dataTransfer.getData("start-time"))
+          sceneActionCard.setAttribute("action-id", event.dataTransfer.getData("action-id"))
 
           event.currentTarget.appendChild(sceneActionCard);
-          const actionId = event.dataTransfer.getData("action-id");
-          sceneActions.push(actionId);
+          const editor = document.getElementById("editor");
+          const actionCardArray = Array.from(editor.children);
+
+          actionCardArray.sort((a, b) => {
+            const startTimeA = new Date(a.getAttribute('start-time'));
+            const startTimeB = new Date(b.getAttribute('start-time'));
+            return startTimeA - startTimeB;
+          });
+
+          count = 0;
+          event.currentTarget.innerHTML = '';
+          actionCardArray.forEach((actionCard) => {
+            count++;
+            original = actionCard.innerText.split(". ")[1];
+            actionCard.innerHTML = count + ". " + original;
+            sceneActions.push(actionCard.getAttribute('action-id'));
+            event.currentTarget.appendChild(actionCard);
+          });
         });
 
         function clearEditor() {

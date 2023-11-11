@@ -14,7 +14,12 @@ import pytest
 import tests
 
 from application.services.telegram import telegram
-from application.repository import (reminder as Reminder, user as User)
+from application.repository import (reminder as Reminder,
+                                    device as Device,
+                                    user as User,
+                                    scene as Scene,
+                                    scene_action as SceneAction,
+                                    temperature_sensor as TemperatureSensor)
 from application.services import scheduler
 from apscheduler.triggers.cron import CronTrigger
 from dateutil.relativedelta import relativedelta
@@ -55,14 +60,14 @@ def setup_scheduler():
         'none',
     )
 
-    yield reminder
+    yield user, reminder
 
     scheduler.scheduler.remove_all_jobs()
     scheduler.scheduler.shutdown()
 
 def test_reminder_sending(setup_scheduler):
     global SENT_REMINDER
-    reminder = setup_scheduler
+    _, reminder = setup_scheduler
     now = datetime.datetime.now() + datetime.timedelta(seconds=0.1)
 
     Reminder.update_description(reminder, "Uthale")
@@ -74,7 +79,7 @@ def test_reminder_sending(setup_scheduler):
     assert SENT_REMINDER == f"Evict Raju today at {now.time()}.\n\nUthale"
 
 def test_reminder_preloading(setup_scheduler):
-    reminder = setup_scheduler
+    _, reminder = setup_scheduler
     now = datetime.datetime.now()
 
     Reminder.update_datetime(reminder, now)
@@ -93,7 +98,7 @@ def test_reminder_preloading(setup_scheduler):
 
 def test_reminder_recurrence_invalid(setup_scheduler):
     global SENT_REMINDER
-    reminder = setup_scheduler
+    _, reminder = setup_scheduler
     now = datetime.datetime.now() + datetime.timedelta(seconds=2)
 
     Reminder.update_datetime(reminder, now)
@@ -109,7 +114,7 @@ def test_reminder_recurrence_invalid(setup_scheduler):
                                                    ("monthly", relativedelta(months=1)),
                                                    ("annually", relativedelta(years=1))])
 def test_reminder_recurrence(setup_scheduler, recurrence, timedelta):
-    reminder = setup_scheduler
+    _, reminder = setup_scheduler
     now = datetime.datetime.now()
 
     Reminder.update_datetime(reminder, now)
@@ -136,5 +141,42 @@ def test_morning_message_sending():
 
     next_run_time = job.next_run_time.replace(tzinfo=None).replace(minute=0)
     expected_next_run_time = (morning + datetime.timedelta(days=1)).replace(minute=0, second=0, microsecond=0)
+
+    assert next_run_time == expected_next_run_time
+
+def test_scene_action_temperature_control(setup_scheduler):
+    user, _ = setup_scheduler
+    scene = Scene.add_scene(user, "test scene", "testing temperature control")
+    device = Device.add_device(user.id, "booster battery", "108.108.108.108")
+    t_sensor = TemperatureSensor.add_sensor(user.id, "asdasd", "car", "253.253.253.253", "shelly")
+    now = datetime.datetime.now()
+    scene_action = SceneAction.add_scene_action(scene, device, "temperature-control", 75,
+                                                t_sensor.id, now, now + datetime.timedelta(hours=2))
+
+    job = scheduler.schedule_scene_action(scene_action)
+
+    next_run_time = job.next_run_time.replace(tzinfo=None).replace(second=0, microsecond=0)
+    expected_next_run_time = (now + datetime.timedelta(minutes=1)).replace(second=0, microsecond=0)
+
+    assert next_run_time == expected_next_run_time
+
+    scheduler.scheduler.remove_all_jobs()
+    scene_action_ended = SceneAction.add_scene_action(scene, device, "temperature-control", 75, t_sensor.id,
+                                                      datetime.datetime.now() - datetime.timedelta(days=1) + datetime.timedelta(hours=2),
+                                                      datetime.datetime.now())
+
+    old_start_time = scene_action_ended.start_time
+    old_end_time = scene_action_ended.end_time
+
+    job2 = scheduler.__regulate_temperature(scene_action_ended)
+
+    new_start_time = scene_action_ended.start_time
+    new_end_time = scene_action_ended.end_time
+
+    assert new_start_time == old_start_time + datetime.timedelta(days=1)
+    assert new_end_time == old_end_time + datetime.timedelta(days=1)
+
+    next_run_time = job2.next_run_time.replace(tzinfo=None).replace(second=0, microsecond=0)
+    expected_next_run_time = new_start_time.replace(second=0, microsecond=0)
 
     assert next_run_time == expected_next_run_time

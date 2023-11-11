@@ -1,5 +1,4 @@
 import datetime
-import json
 from peewee import (Model, BlobField, BooleanField, CharField, DateTimeField,
                     ForeignKeyField, IntegerField, TextField)
 
@@ -22,7 +21,7 @@ class Scene(BaseModel):
 
 class SceneAction(BaseModel):
     scene = ForeignKeyField(Scene, backref='actions', on_delete='CASCADE')
-    enabled = BooleanField(default=True)
+    enabled = BooleanField(default=False)
 
     sensor = ForeignKeyField(Sensor, backref='actions', null=True, on_delete='SET NULL')
     device = ForeignKeyField(Device, backref='actions', on_delete='CASCADE')
@@ -34,4 +33,4 @@ class SceneAction(BaseModel):
     action_param = BlobField(null=True)
 
     sequence_order = IntegerField(null=True)
-    job_id = IntegerField(null=True)
+    job_id = CharField(null=True)

@@ -1,5 +1,5 @@
 import datetime as date_time
-from peewee import Model, CharField, IntegerField, TextField, DateTimeField, ForeignKeyField
+from peewee import Model, CharField, TextField, DateTimeField, ForeignKeyField
 from application import database
 from application.models.user import User
 
@@ -12,6 +12,6 @@ class Reminder(BaseModel):
     datetime = DateTimeField()
     recurrence = CharField()
     description = TextField(null=True)
-    job_id = IntegerField(null=True)
+    job_id = CharField(null=True)
     created_at = DateTimeField(default=date_time.datetime.now)
     user = ForeignKeyField(User, backref='reminders', on_delete='CASCADE')

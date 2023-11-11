@@ -63,6 +63,9 @@ def delete_scene():
     user_firstname = data['user_firstname']
     scene = Scene.get_scene(id=scene_id)
 
+    for scene_action in scene.actions:
+        scheduler.delete_job(scene_action.job_id)
+
     Scene.delete_scene(scene)
 
     return jsonify({'success': f'{scene_name} scene successfully deleted for {user_firstname} :O)'}), 200

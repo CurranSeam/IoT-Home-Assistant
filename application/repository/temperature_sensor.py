@@ -39,6 +39,9 @@ def get_sensor(id=None,
 def get_sensors():
     return TemperatureSensor.select()
 
+def get_sensor_via_base(base_sensor):
+    return TemperatureSensor.get(TemperatureSensor.sensor == base_sensor)
+
 def get_sensors_by_user(user_id):
     query = TemperatureSensor.select().join(
                 Sensor,

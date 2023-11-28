@@ -1,3 +1,5 @@
+import datetime
+
 from application.models.scene import Scene, SceneAction
 from application.utils.exception_handler import log_exception
 
@@ -21,13 +23,13 @@ def get_scene_action(id=None, scene=None, user=None):
         log_exception(e)
         return None
 
-    reminder = {
+    scene_action = {
         id: lambda: SceneAction.get(SceneAction.id == id),
         scene: lambda: SceneAction.get(SceneAction.scene == scene),
         user: lambda: SceneAction.get(SceneAction.user == user),
     }[next(filter(lambda param: param is not None, params))]
 
-    return reminder()
+    return scene_action()
 
 def get_scene_actions():
     return SceneAction.select()
@@ -81,5 +83,20 @@ def update_start_time(scene_action, start_time):
 def update_end_time(scene_action, end_time):
     scene_action.end_time = end_time
     scene_action.save()
+
+    return scene_action
+
+def adjust_start_end_time(scene_action):
+    start_delta = (datetime.datetime.now() - scene_action.start_time).days
+    end_delta = (datetime.datetime.now() - scene_action.end_time).days
+
+    if start_delta > 0 and end_delta > 0:
+        start_time = scene_action.start_time + datetime.timedelta(days=start_delta)
+
+        end_offset_hours = (scene_action.end_time - scene_action.start_time).total_seconds() / 3600
+        update_start_time(scene_action, start_time)
+        end_time = scene_action.start_time + datetime.timedelta(hours=end_offset_hours)
+
+        update_end_time(scene_action, end_time)
 
     return scene_action

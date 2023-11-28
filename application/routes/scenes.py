@@ -50,8 +50,8 @@ def toggle_scene(scene_id):
         if not enabled:
             scheduler.delete_job(scene_action.job_id)
         else:
-            job = scheduler.schedule_scene_action(scene_action)
-            SceneAction.update_job_id(scene_action, job.id)
+            SceneAction.adjust_start_end_time(scene_action)
+            scheduler.schedule_scene_action(scene_action, now=True)
 
     return jsonify({'success': f'{scene.name} scene toggled successfully :O)'}), 200
 

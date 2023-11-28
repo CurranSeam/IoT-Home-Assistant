@@ -73,8 +73,11 @@ def schedule_action_sequence():
     action_ids = data['scene_actions']
     scene = Scene.get_scene(id=scene_id)
 
+    if len(action_ids) == 0:
+         return jsonify({'error': "Scene must contain at least one action"}), 400
+
     for action_id in action_ids:
-        scene_action = SceneAction.get_scene_action(id=action_id)
+        scene_action = SceneAction.get_scene_action(id=int(action_id))
         SceneAction.update_enabled(scene_action, True)
 
         if scene.enabled:
@@ -84,6 +87,10 @@ def schedule_action_sequence():
                 return jsonify({'error': "Scheduling for scene actions was unsuccessful"}), 500
             
             SceneAction.update_job_id(scene_action, job.id)
+
+    for action in scene.actions:
+        if str(action.id) not in action_ids:
+            SceneAction.update_enabled(action, False)
 
     return jsonify({'success': 'Scene actions successfully scheduled'}), 200
 

@@ -21,8 +21,9 @@ def start():
         schedule_reminder(reminder)
 
     for action in SceneAction.get_scene_actions():
-        if action.enabled:
-            schedule_scene_action(action)
+        if action.enabled and action.scene.enabled:
+            SceneAction.adjust_start_end_time(action)
+            schedule_scene_action(action, now=True)
 
     schedule_morning_message()
 
@@ -64,6 +65,7 @@ def schedule_reminder(reminder):
     }
 
     schedule_job = trigger_mapping.get(recurrence)
+
     if schedule_job is None:
         raise Exception(f"Invalid reminder recurrence: {recurrence}")
 
@@ -74,7 +76,7 @@ def schedule_reminder(reminder):
 def schedule_morning_message():
     return scheduler.add_job(telegram.send_morning_message, __set_cron(hour=9, minute=0))
 
-def schedule_scene_action(scene_action):
+def schedule_scene_action(scene_action, now=None):
     func = {
         "on" : mqtt.power_on,
         "off" : mqtt.power_off,
@@ -85,9 +87,14 @@ def schedule_scene_action(scene_action):
         raise Exception("Invalid action_type")
 
     if func == __regulate_temperature:
+        run_time = scene_action.start_time
+
+        if now and (scene_action.start_time < datetime.datetime.now() < scene_action.end_time):
+            run_time = datetime.datetime.now() + datetime.timedelta(seconds=5)
+
         job = scheduler.add_job(func, IntervalTrigger(minutes=1),
                                 args=[scene_action],
-                                next_run_time=scene_action.start_time)
+                                next_run_time=run_time)
 
         SceneAction.update_job_id(scene_action, job.id)
         return job

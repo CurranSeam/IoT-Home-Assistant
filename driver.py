@@ -158,7 +158,11 @@ if __name__ == "__main__":
     for idx, cam_name in enumerate(object_detection.CAMERAS):
         channel_str= "channel=" + str(idx + 1)
         stream = VideoStream(resolution=(object_detection.imW,object_detection.imH), framerate=30, stream_url=STREAM_URL.replace("channel=1", channel_str))
-        object_detection.CAMERAS.update({cam_name:[stream.start(), None, 0]})
+
+        if idx == 0:
+            object_detection.CAMERAS.update({cam_name:[stream.start(), None, 1]})
+        else:
+            object_detection.CAMERAS.update({cam_name:[stream.start(), None, 0]})
 
     # start a thread that will perform motion detection
     t = threading.Thread(target=object_detection.detection)

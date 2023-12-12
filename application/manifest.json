@@ -1,0 +1,20 @@
+{
+    "name": "SeamNet",
+    "background_color": "white",
+    "theme_color": "gray",
+    "icons": [
+        {
+            "src": "static/bot-512x512.png",
+            "type": "image/png",
+            "sizes": "512x512",
+            "purpose": "maskable"
+        },
+        {
+            "src": "static/bot-192x192.png",
+            "type": "image/png",
+            "sizes": "192x192"
+        }
+    ],
+    "start_url": "/",
+    "display": "standalone"
+}

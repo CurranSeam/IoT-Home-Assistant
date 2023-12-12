@@ -1,7 +1,7 @@
 from application.services import security as vault
 from application.services.video import object_detection
 
-from flask import Response, request, jsonify, make_response, render_template, Blueprint
+from flask import Response, request, jsonify, make_response, render_template, send_from_directory, Blueprint
 
 bp = Blueprint('home', __name__)
 
@@ -14,6 +14,14 @@ def index():
         return make_response('Could not verify!', 401, {'WWW-Authenticate' : 'Basic realm="Login Required"'})
 
     return render_template("index.html")
+
+@bp.route("/install")
+def install():
+    return render_template("install.html")
+
+@bp.route('/sw.js', methods=['GET'])
+def sw():
+    return send_from_directory('static', 'sw.js')
 
 # Detection
 @bp.route("/video_feed/<string:cam>/", methods=["GET"])

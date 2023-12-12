@@ -35,7 +35,7 @@ def get_bot_username():
 
 @bp.route('/get_bot_image', methods=["GET"])
 def get_bot_image():
-    return send_from_directory("static", "bot.png", mimetype='image/jpeg')
+    return send_from_directory("static", "bot.png", mimetype='image/png')
 
 @bp.route('/users/<string:user_id>/<string:service>/notifications', methods=["PUT"])
 def update_notification_status(user_id, service):

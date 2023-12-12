@@ -5,7 +5,7 @@
   <meta http-equiv="Pragma" content="no-cache"/>
   <meta http-equiv="Expires" content="0"/>
 
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="../../static/styles.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.3.0/css/all.min.css">
 
   <script src="http://code.jquery.com/jquery-2.1.4.min.js"></script>
@@ -17,7 +17,8 @@
             }
         });
     });
-</script>
+  </script>
+
 </head>
 <body>
   <!-- Header -->
@@ -31,7 +32,7 @@
       <div class="dropdown">
         <button class="dropbtn">
           <a>
-            Automation
+            IoT
             <i class="fa fa-caret-down"></i>
           </a>
         </button>
@@ -43,10 +44,60 @@
       </div>
 
       <div class="nav-right">
-        <a href="{{ url_for('settings.settings') }}" class="setting-icon" style="color:rgb(205, 78, 31);"><i class="fas fa-user-cog"></i></a>
+        <a href="{{ url_for('settings.settings') }}" class="setting-icon" style="color:rgb(55, 55, 55);"><i class="fas fa-user-cog"></i></a>
       </div>
+
+      <button class="button-81" id="instructions" url="{{ url_for('home.install') }}" style="margin: 40px 10px 0 0; box-shadow: 0 3px 3px 0 rgba( 31, 38, 135, 0.37 ); float: right" onclick=openInstallSteps(this) >Install</button>
+      <button class="button-81" id="install" style="display: none; background-color: rgb(87, 169, 100); margin: 40px 10px 0 0; box-shadow: 0 3px 3px 0 rgba( 31, 38, 135, 0.37 ); float: right">Install</button>
     </div>
   </header>
+
+  <script>
+    let installPrompt = null;
+    const installButton = document.querySelector("#install");
+    const instructionButton = document.querySelector("#instructions");
+
+    if (window.location.pathname != "/") {
+      instructionButton.style.display = "none";
+      installButton.style.display = "none";
+    }
+
+    window.addEventListener("beforeinstallprompt", (event) => {
+      event.preventDefault();
+      installPrompt = event;
+      instructionButton.style.display = "none";
+      installButton.style.display = "inline";
+    });
+
+    window.addEventListener('DOMContentLoaded', () => {
+      if(window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches) {
+        instructionButton.style.display = "none";
+      }
+    });
+
+    installButton.addEventListener("click", async () => {
+      if (!installPrompt) {
+        return;
+      }
+      const result = await installPrompt.prompt();
+      disableInAppInstallPrompt();
+    });
+
+    window.addEventListener("appinstalled", () => {
+      disableInAppInstallPrompt();
+    });
+
+    function disableInAppInstallPrompt() {
+      installPrompt = null;
+      installButton.style.display = "none";
+      instructionButton.style.display = "none";
+    }
+
+    function openInstallSteps(button) {
+      var url = button.getAttribute("url")
+      document.location.href = url;
+    }
+  </script>
 
 </body>
 </html>

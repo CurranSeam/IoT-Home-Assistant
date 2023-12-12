@@ -2,7 +2,7 @@ import hashlib
 import os
 
 from application.services import security as vault
-from flask import Flask
+from flask import Flask, send_file
 from peewee import SqliteDatabase
 
 app = Flask(__name__)
@@ -51,6 +51,10 @@ app.register_blueprint(settings.bp)
 app.register_blueprint(stats.bp)
 app.register_blueprint(scenes.bp)
 app.register_blueprint(scene_editor.bp)
+
+@app.route('/manifest.json')
+def serve_manifest():
+    return send_file('manifest.json', mimetype='application/manifest+json')
 
 @app.context_processor
 def inject_shared_vars():

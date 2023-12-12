@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
+    <link rel="icon" href="{{ url_for('settings.get_bot_image') }}">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
     <meta http-equiv="Pragma" content="no-cache"/>
     <meta http-equiv="Expires" content="0"/>
@@ -112,7 +113,7 @@
                         {% for cam_name, enabled in cams|zip_detection(cam_statuses) %}
                           <tr>
                             <td>{{ cam_name }}</td>
-                            <td style="margin-left:50px; padding: 5px; float: left;">
+                            <td style="margin-left:40px; padding: 5px; float: left;">
                               <input type="checkbox" class="checkbox" detect_status="{{ cam_name }}" {% if enabled %}checked{% endif %} onclick="updateCamDetection(this)">
                             </td>
                           </tr>

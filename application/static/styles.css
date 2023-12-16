@@ -6,7 +6,7 @@ html, body {
 body {
   background: url('main_background.png');
   background-repeat: no-repeat;
-  background-size: 150% 305%;
+  background-size: 150% 330%;
   backdrop-filter: blur( 16.5px );
   margin: 0;
   font-family: Arial, sans-serif;
@@ -63,9 +63,12 @@ body {
 
 /* Navigation styles */
 .logo {
+  border-radius: 50%;
+  box-shadow:inset 20px 0px 32px 0px rgb(84, 84, 84, 0.2);
   cursor: pointer;
   width: auto;
   height: 130px;
+  transform: scale(0.9);
   float: left;
   margin: auto 2px;
   transition: transform 0.2s ease-in-out;
@@ -143,32 +146,36 @@ h1 {
   text-align: center;
   font-family: 'Segoe UI', monospace;
 }
+#feed-div {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  position: relative;
+}
+#image-container {
+  text-align: center;
+  margin: auto;
+}
 .marginauto {
+  height: auto;
   box-shadow: 0 8px 32px 10px rgba(12, 15, 54, 0.37);
-  margin: 50px auto 20px auto;
+  margin: 0 auto 20px auto;
   display: block;
 }
 .indicator {
-  box-shadow: 0 8px 32px 0 rgba( 31, 38, 135, 0.37 );
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 10px;
+  display: block;
+  position: relative;
+  top: 42px;
+  left: 0;
+  border: 2px solid #414141;
+  padding: 10px 10px 10px 10px;
   background-color: #e8e8e8;
-  border-radius: 8px;
+  border-radius: 25%;
   font-size: 16px;
   font-weight: bold;
   text-align: center;
   transition: background-color 0.3s ease;
   width: fit-content;
-  margin: 0 auto;
-  transform: scale(1.1);
-}
-#detection-text {
-  margin-right: 5px;
-}
-#detection-state {
-  font-size: 18px;
 }
 
 /* FEED BUTTON */
@@ -218,7 +225,7 @@ h1 {
   margin: 15px 0;
   transition: all .1s cubic-bezier(.4, 0, .2, 1);
   background: #e8e8e8;
-  box-shadow: 0 8px 32px 0 rgba( 31, 38, 135, 0.37 );
+  box-shadow: 0 3px 3px 0 rgba( 31, 38, 135, 0.37 );
   backdrop-filter: blur( 16.5px );
   -webkit-backdrop-filter: blur( 16.5px );
   border: 1px solid rgba( 255, 255, 255, 0.18 );

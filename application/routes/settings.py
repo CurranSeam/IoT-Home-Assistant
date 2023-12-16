@@ -1,6 +1,5 @@
 import datetime
 
-from application import app
 from application.repository import user as User
 from application.services import security as vault
 from application.services.telegram import telegram
@@ -26,7 +25,8 @@ def settings():
     return render_template("settings.html", users=names, ids=ids, telegram_statuses=tg_status,
                             chat_ids=tg_chat_ids, sms_statuses=sms_status, phone_nums=numbers,
                             min_conf=object_detection.min_conf_threshold,
-                            message_cooloff=cooloff, cams=cameras, cam_statuses=cameras_status)
+                            message_cooloff=cooloff, cams=cameras, cam_statuses=cameras_status,
+                            draw_extra_objects=object_detection.draw_extra_objects)
 
 @bp.route("/get_bot_username")
 def get_bot_username():
@@ -75,6 +75,14 @@ def update_message_cooloff():
     cooloff_seconds = int(data['new_cooloff'])
     new_cooloff = datetime.timedelta(seconds=cooloff_seconds)
     object_detection.message_cooloff = new_cooloff
+
+    return jsonify({'success': True}), 200
+
+@bp.route("/settings/draw-extra-objects", methods=["PUT"])
+def update_extra_objects():
+    data = request.get_json()
+    draw_extra_objects = data['draw_extra_objects']
+    object_detection.draw_extra_objects = draw_extra_objects
 
     return jsonify({'success': True}), 200
 

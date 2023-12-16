@@ -44,3 +44,23 @@ def get_camera_data(cam):
     else:
         detection = "ON"
     return jsonify({'success': detection}), 200
+
+@bp.route("/get-conf-threshold")
+def get_conf_threshold():
+    conf_threshold = object_detection.min_conf_threshold
+    return jsonify({'success': conf_threshold}), 200
+
+@bp.route("/get-message-cooloff")
+def get_message_cooloff():
+    message_cooloff = object_detection.message_cooloff.total_seconds()
+    return jsonify({'success': message_cooloff}), 200
+
+@bp.route("/get-draw-extra-objects")
+def get_extra_bounding():
+    is_extra = object_detection.draw_extra_objects
+
+    if is_extra:
+        detection = "ON"
+    else:
+        detection = "OFF"
+    return jsonify({'success': detection}), 200

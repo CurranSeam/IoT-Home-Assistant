@@ -48,6 +48,9 @@ message_time = datetime.datetime(1900, 1, 1)
 # Time-delta of the transmission of consecutive notification messages
 message_cooloff = datetime.timedelta(seconds=15)
 
+# Indicate to put bounding boxes on all objects or only people
+draw_extra_objects = False
+
 # Initialize frame rate calculation
 frame_rate_calc = 1
 freq = cv2.getTickFrequency()
@@ -158,9 +161,13 @@ def detection():
             # Loop over all detections and draw detection box if confidence is above minimum threshold
             for i in range(len(scores)):
                 if ((scores[i] > min_conf_threshold) and (scores[i] <= 1.0)):
+                    object_name = labels[int(classes[i])]
 
                     # Get bounding box coordinates and draw box
-                    object_name = draw_detection_box(i, frame, labels, boxes, classes, scores)
+                    if not draw_extra_objects and object_name == "person":
+                        object_name = draw_detection_box(i, frame, labels, boxes, classes, scores)
+                    elif draw_extra_objects:
+                        object_name = draw_detection_box(i, frame, labels, boxes, classes, scores)
 
                     # Handle notifications based on detection results
                     prepare_notification(object_name, frame, idx)

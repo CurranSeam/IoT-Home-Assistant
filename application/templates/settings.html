@@ -16,6 +16,7 @@
     </script>
 
     <link rel="stylesheet" href="../static/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
   </head>
 
   <body>
@@ -69,7 +70,9 @@
           </tr>
           <tbody>
             <tr>
-              <td><b>Message Cool-Off</b><br>(Seconds between consecutive messages)</td>
+              <td title="Delay in seconds between messages">
+                <b>Message Cool-Off <i class="tooltip fas fa-question-circle"></i></b>
+              </td>
               <td>
                 <label for="message_cooloff"></label>
                 <input type="range" id="message_cooloff" name="message_cooloff" class="slider" min="15" max="180" step="15" value="{{ message_cooloff }}" style="width: 80px;">
@@ -91,7 +94,9 @@
           </tr>
           <tbody>
             <tr>
-              <td><b>Minimum Confidence Threshold</b><br>(Lowest percentage for detection results)</td>
+              <td title="Detection results below this are omitted">
+                <b>Minimum Confidence Threshold <i class="tooltip fas fa-question-circle"></i></b>
+              </td>
               <td>
                 <label for="conf_threshold"></label>
                 <input type="range" id="conf_threshold" name="conf_threshold" class="slider" min="0.1" max="0.9" step="0.1" value="{{ min_conf }}" style="width: 80px;">
@@ -100,7 +105,10 @@
               </td>
             </tr>
             <tr>
-              <td style="vertical-align:top;"><b>Enable/Disable Detection</b><br>(Select cameras to run detection on)<br><br>Note:<br>Optimal performance is 3 cam max</td>
+              <td title="Select cameras to run detection on.
+Optimal performance is 3 cam max.">
+                <b>Enable Camera Detection <i class="tooltip fas fa-question-circle"></i></b>
+              </td>
               <td>
                 <div id="tableContainer-1">
                   <div id="tableContainer-2">
@@ -124,6 +132,15 @@
                 </div>
               </td>
             </tr>
+            <tr>
+              <td title="Enable detection of other objects.
+People are always detected.">
+                <b>Draw Extra Objects <i class="tooltip fas fa-question-circle"></i></b>
+              </td>
+              <td>
+                <input type="checkbox" class="checkbox" {% if draw_extra_objects %}checked{% endif %} onclick="updateDrawExtraObjects(this)">
+              </td>
+            </tr>
           </tbody>
         </table>
       </div>
@@ -138,6 +155,17 @@
     <div id="snackbar">Update successful :O)</div>
 
     <script>
+      $("td[title]").click(function () {
+        var $title = $(this).find(".title");
+        if (!$title.length) {
+          $(this).append('<div class="title" style="font-size: 20px; padding: 5px; white-space: pre;">' + $(this).attr("title") + '</div>');
+          $(this).css('z-index', 2);
+        } else {
+          $title.remove();
+          $(this).css('z-index', 0);
+        }
+      });
+
       function updateNotifications(checkbox, service) {
         var user = checkbox.getAttribute('first-name');
         var user_id= checkbox.getAttribute('user-id');
@@ -192,6 +220,28 @@
           let msg = ""
           response.ok ? msg = `\"${cam}\" camera detection updated :O)` :
                         msg = `Failed to update \"${cam}\" camera detection :O(`
+          updateSnackbar(msg)
+        })
+        .catch((error) => {
+          // Handle any errors
+          updateSnackbar(error)
+        });
+      }
+
+      function updateDrawExtraObjects(checkbox) {
+        fetch('/settings/draw-extra-objects', {
+          method: 'PUT',
+          body: JSON.stringify({
+            draw_extra_objects: checkbox.checked
+          }),
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        })
+        .then((response) => {
+          let msg = ""
+          response.ok ? msg = `Extra objects updated :O)` :
+                        msg = `Failed to update extra objects :O(`
           updateSnackbar(msg)
         })
         .catch((error) => {

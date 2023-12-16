@@ -71,19 +71,38 @@
 
   <div class="content">
     <div>
-      <h1 class="h1">Surveillance Feed</h1>
+      <h1 style="margin: 50px 0 50px 0;" class="h1">Surveillance Feed</h1>
     </div>
 
-    <div>
-      <img id="feed" style="zoom: 135%;" src="{{ url_for('home.video_feed', cam='Driveway') }}" class = "marginauto" alt="centered image">
+    <div id="feed-div">
+      <div id="image-container">
+        <span id="detection-indicator" class="indicator">
+          <span id="detection-text"><i class="fas fa-eye"></i></span>
+        </span>
+        <img id="feed" style="zoom: 135%; border-radius: 8px;" src="{{ url_for('home.video_feed', cam='Driveway') }}" class="marginauto" alt="centered image">
+      </div>
     </div>
 
-    <div id="detection-indicator" class="indicator">
-      <span id="detection-text">Detection: </span>
-      <span id="detection-state">-</span>
+    <div style="text-align: center; margin-top: 50px;">
+      <span style="border-radius: 8px; background-color: rgb(212, 212, 212); padding: 10px; font-weight: bold; margin-right:5px;">
+        <span id="message-cooloff-text">Message Cooloff: </span>
+        <span id="message-cooloff-state">-</span>
+      </span>
+
+      <span style="border-radius: 8px; background-color: rgb(212, 212, 212); padding: 10px; font-weight: bold; margin-right: 5px;">
+        <span id="min-conf-thresh-text">Min Conf Thresh: </span>
+        <span id="min-conf-thresh-state">-</span>
+      </span>
+
+      <span style="border-radius: 8px; background-color: rgb(212, 212, 212); padding: 10px; font-weight: bold; margin-right: 5px;">
+        <span id="extra-objects-text">Extra Objects: </span>
+        <span id="extra-objects-state">-</span>
+      </span>
     </div>
 
-    <div style="display: flex; align-items: center; justify-content: center; margin: 70px auto auto auto;">
+    <br>
+
+    <div style="display: flex; align-items: center; justify-content: center; margin: 100px auto auto auto;">
       <button id="next" class="button-81" style="font-size: 1.5rem;" role="button" onclick="change_camera(); submitPoll(); getDetectionState()">Next Camera</button>
     </div>
   </div>
@@ -97,6 +116,9 @@
   <script>
       window.onload = function() {
         getDetectionState()
+        getMessageCooloff()
+        getMinConfThreshold()
+        getExtraObjectsState()
       };
 
       function getDetectionState() {
@@ -108,18 +130,50 @@
           return response.json();
         })
         .then((data) => {
-          var stateText = document.getElementById("detection-state");
-          stateText.innerText = data.success;
+          var detectionText = document.getElementById("detection-text");
 
           var indicator = document.getElementById("detection-indicator");
 
           if (data.success === "ON") {
             indicator.style.backgroundColor = "rgb(121, 196, 137)";
-            indicator.style.color = "white";
+            detectionText.innerHTML = "<i class='fas fa-eye'></i>";
           } else {
             indicator.style.backgroundColor = "#F2F2F2";
-            indicator.style.color = "black";
+            detectionText.innerHTML = "<i class='fas fa-eye-slash'></i>";
           }
+        })
+      }
+
+      function getMessageCooloff() {
+        fetch('get-message-cooloff')
+        .then((response) => {
+          return response.json();
+        })
+        .then((data) => {
+          var stateText = document.getElementById("message-cooloff-state");
+          stateText.innerText = data.success;
+        })
+      }
+
+      function getMinConfThreshold() {
+        fetch('get-conf-threshold')
+        .then((response) => {
+          return response.json();
+        })
+        .then((data) => {
+          var stateText = document.getElementById("min-conf-thresh-state");
+          stateText.innerText = data.success;
+        })
+      }
+
+      function getExtraObjectsState() {
+        fetch('get-draw-extra-objects')
+        .then((response) => {
+          return response.json();
+        })
+        .then((data) => {
+          var stateText = document.getElementById("extra-objects-state");
+          stateText.innerText = data.success;
         })
       }
   </script>

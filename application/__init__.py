@@ -34,6 +34,7 @@ def after_request(response):
 #-----------------------------------------------------------------------
 # Routes setup
 
+from application.routes import about
 from application.routes import home
 from application.routes import devices
 from application.routes import sensors
@@ -43,6 +44,7 @@ from application.routes import stats
 from application.routes import scenes
 from application.routes import scene_editor
 
+app.register_blueprint(about.bp)
 app.register_blueprint(home.bp)
 app.register_blueprint(devices.bp)
 app.register_blueprint(sensors.bp)

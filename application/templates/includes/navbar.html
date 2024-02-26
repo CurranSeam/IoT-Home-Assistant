@@ -23,7 +23,9 @@
 <body>
   <!-- Header -->
   <header class="header">
-    <img src="{{ url_for('settings.get_bot_image') }}" class="logo">
+    <a href="{{ url_for('about.about') }}">
+      <img src="{{ url_for('settings.get_bot_image') }}" class="logo">
+    </a>
     <div class="nav">
       <a href="/">Home</a>
       <a href="{{ url_for('stats.stats') }}">Stats</a>

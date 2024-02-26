@@ -26,61 +26,96 @@
   <body>
     {% include 'includes/navbar.html' %}
 
-      <div>
-        <h1 class="h1">About</h1>
-      </div>
+    <div class="content">
+        <div>
+          <h1 class="h1">About</h1>
+        </div>
 
-      <div style="text-align: center; margin: auto 10%">
-        <div style="display: inline-block; font-size: 25px;">
-        <pre>
-      <!-- <div style="margin: 0; padding: 0; display: flex; align-items: center; justify-content: left;">
-        <div style="width: 75%; text-align: center; font-size: 25px;"> -->
-          - Home assistant and IoT system utilizing a Raspberry Pi and Coral Tensor Processing Unit.<br>
-          - Consists of a web application and Telegram bot employing AI/ML integration with a fault tolerant design.<br>
-          - Exhibits a quantized multi-object machine learning classifier for realtime video object-detection.<br><br>
-          - Follows a multi-threaded design to reduce process-blocking bottlenecks.<br><br> 
-          - Employs a redundant (SMS/Telegram) notification system for quick alerts of activity.<br><br>
-          - Includes reminder system with recurrence optioning.<br><br>
-          - Seamlessly integrates a home automation system which is facilitated by the system's Mosquitto Broker via the MQTT protocol. This enables low bandwith/latency bidirectional communication.<br><br>
-          <!-- - Home automation system is facilitated by the system's Mosquitto Broker via the MQTT protocol. This enables low bandwith/latency bidirectional communication.<br><br> -->
-          - Users can connect IoT devices and sensors via Wifi and Rest-API technologies.<br><br>
-          - Sensors asyncronously push updates only when needed to conserve bandwidth and/or battery.<br><br>
-          - Home automation comprises of scenes and scene actions to automate home tasks like turning devices on/off and temperature control.<br><br>
-          - Bot provides telegram services such as; server stats, device interfacing, jokes, facts, and trivia.<br><br>
-          - Bespoke job engine asynchronously schedules tasks and services as background processes for reminders, scenes, etc.<br><br>
-          - Personal data is secured by an AES algorithm in CBC (Cipher Block Chaining) mode with a 128-bit key for encryption which uses PKCS7 padding.
-          <br><br>
-          <!-- - Uses Python, Flask, SQLite, TensorFlow, OpenCV, Pytest, JavaScript, HTML, Peewee ORM, APScheduler, Mosquitto MQTT.
-          Applies REST-API, networking, multi-threading, asynchrony, encryption, scheduling, and RTSP/SMTP/WebSocket/MQTT protocols. -->
-        <!-- </div> -->
-        <pre>
-      <!-- </div> -->
+        <br>
+        <br>
+        <br>
+        <br>
 
-      <div style="text-align: center;">
-      <div style="display: inline-block; text-align: left; font-size: 25px;">
-      <pre>
-      <h2 style="text-align: center;">Hardware Specifications</h2>
+        <div style="text-align: center;">
+        <div style="display: inline-block; font-size: 25px; text-align: left; width: 50%;">
 
-      Host Server: Raspberry PI 4 
-      - Model: B089ZZ8DTV
-      - Processor: Broadcom BCM2711, quad-core Cortex-A72 (ARM v8) 64-bit SoC @ 1.5GHz
-      - Operating System: 32-bit Raspbian GNU/Linux 11 (bullseye)
-      - Linux Kernel: Linux raspberrypi 6.1.21-v8+ 
-      - Memory: 8GB LPDDR4
-      - Connectivity: 2.4 GHz and wireless LAN, Bluetooth, Gigabit Ethernet
-      - Multimedia: H.265 H.264 OpenGL ES, 3.0 graphics
-      - Flash Memory: SanDisk 64GB Extreme microSDXC UHS-I Micro SD Card
-      - Input power: 3A 5V DC (USB-C or GPIO header) or PoE (requires PoE HAT)
+        <h2 style="text-align: center;">Services</h2>
 
-      Google Edge Tensor Processing Unit: Used for high-speed ML inferencing.
-      - Supported OS: Debian based Linux
-      - Model: G950-06809-01
-      - IO: up to 4 tera-ops per second (tops)
-      - Connector: USB 3.0 Type-C 
-      </pre>
-  <br>
-  <br>
-  <br>
+        <br>
+
+        <div style="margin-left: 10%;">
+        <h4>IoT (Internet of Things)</h4>
+        - Home automation system ran via a web or standalone app, and Telegram.<br><br>
+        - Comprises of scenes and scene actions to automate home tasks like turning devices on/off and temperature control.<br><br>
+        - Users can connect IoT devices and sensors via Wifi and Rest-API technologies.<br><br>
+        - Employs a redundant (SMS/Telegram) notification system for quick alerts of activity.<br><br>
+
+        <h4>Scheduling</h4>
+        - Set reminders and have the Telegram bot notify you.<br><br>
+        - Telegram bot sends all active users a morning message with a joke.<br><br>
+        - The system schedules and runs scenes for users.<br><br>
+
+        <h4>Telegram</h4>
+        - In the Telegram app, the Bot provides services such as; server info, device interfacing, jokes, facts, and trivia.
+        </div>
+
+        <br>
+        <br>
+        <br>
+        <br>
+
+        <h2 style="text-align: center;">Architecture</h2>
+
+        <br>
+
+        <div style="margin-left: 10%;">
+        - System is ran via a Raspberry Pi and Coral Tensor Processing Unit.<br><br>
+        - The system's MQTT Mosquitto Broker enables low bandwith/latency bidirectional communication.<br><br>
+        - Applications employs AI/ML integration with a fault tolerant design.<br><br>
+        - Exhibits a quantized multi-object machine learning classifier for realtime video object-detection.<br><br>
+        - Follows a multi-threaded design to reduce process-blocking bottlenecks.<br><br> 
+        - Includes reminder system with recurrence optioning.<br><br>
+        - Sensors asyncronously push updates only when needed to conserve bandwidth and/or battery.<br><br>
+        - Bespoke job engine asynchronously schedules tasks and services as background processes for reminders, scenes, etc.<br><br>
+        - Personal data is secured by an AES algorithm in CBC (Cipher Block Chaining) mode with a 128-bit key for encryption which uses PKCS7 padding.
+        </div>
+
+        <br>
+        <br>
+        <br>
+        <br>
+
+        <h2 style="text-align: center;">Hardware Specifications</h2>
+
+        <br>
+
+        <div style="margin-left: 12%;">
+        <h4>Host Server: Raspberry PI 4</h4>
+        - Model: B089ZZ8DTV<br>
+        - Processor: Broadcom BCM2711, quad-core Cortex-A72 (ARM v8) 64-bit SoC @ 1.5GHz<br>
+        - Operating System: 32-bit Raspbian GNU/Linux 11 (bullseye)<br>
+        - Linux Kernel: Linux raspberrypi 6.1.21-v8+<br>
+        - Memory: 8GB LPDDR4<br>
+        - Connectivity: 2.4 GHz and wireless LAN, Bluetooth, Gigabit Ethernet<br>
+        - Multimedia: H.265 H.264 OpenGL ES, 3.0 graphics<br>
+        - Flash Memory: SanDisk 64GB Extreme microSDXC UHS-I Micro SD Card<br>
+        - Input power: 3A 5V DC (USB-C or GPIO header) or PoE (requires PoE HAT)<br><br>
+
+        <h4>Google Edge Tensor Processing Unit: Used for high-speed ML inferencing.</h4>
+        - Supported OS: Debian based Linux<br>
+        - Model: G950-06809-01<br>
+        - IO: up to 4 tera-ops per second (tops)<br>
+        - Connector: USB 3.0 Type-C<br>
+        </div>
+        </div>
+        </div>
+        </div>
+    </div>
+
+    <br>
+    <br>
+    <br>
+    <br>
 
     {% include 'includes/footer.html' %}
 

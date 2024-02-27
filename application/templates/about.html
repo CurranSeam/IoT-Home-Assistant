@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <link rel="icon" href="{{ url_for('settings.get_bot_image') }}">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
+    <meta http-equiv="Pragma" content="no-cache"/>
+    <meta http-equiv="Expires" content="0"/>
+
+    <title>{{ server }} - About</title>
+
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js" integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy" crossorigin="anonymous"></script>
+
+    <link rel="stylesheet" href="../static/styles.css">
+
+    <!-- <script>
+      botName = new String({{ server }});
+      console.log(typeof(botName));
+      lastName = botName.substring(0, 5)
+      botText = document.getElementById("botText");
+      botText.innerHTML = `- ${lastName} Bot provides telegram services such as; server stats, device interfacing, jokes, facts, and trivia.`;
+    </script> -->
+  </head>
+
+  <body>
+    {% include 'includes/navbar.html' %}
+
+    <div class="content">
+        <div>
+          <h1 class="h1">About</h1>
+        </div>
+
+        <br>
+        <br>
+        <br>
+        <br>
+
+        <div style="text-align: center;">
+        <div style="display: inline-block; font-size: 25px; text-align: left; width: 50%;">
+
+        <h2 style="text-align: center;">Services</h2>
+
+        <br>
+
+        <div style="margin-left: 10%;">
+        <h4>IoT (Internet of Things)</h4>
+        - Home automation system ran via a web or standalone app, and Telegram.<br><br>
+        - Comprises of scenes and scene actions to automate home tasks like turning devices on/off and temperature control.<br><br>
+        - Users can connect IoT devices and sensors via Wifi and Rest-API technologies.<br><br>
+        - Employs a redundant (SMS/Telegram) notification system for quick alerts of activity.<br><br>
+
+        <h4>Scheduling</h4>
+        - Set reminders and have the Telegram bot notify you.<br><br>
+        - Telegram bot sends all active users a morning message with a joke.<br><br>
+        - The system schedules and runs scenes for users.<br><br>
+
+        <h4>Telegram</h4>
+        - In the Telegram app, the Bot provides services such as; server info, device interfacing, jokes, facts, and trivia.
+        </div>
+
+        <br>
+        <br>
+        <br>
+        <br>
+
+        <h2 style="text-align: center;">Architecture</h2>
+
+        <br>
+
+        <div style="margin-left: 10%;">
+        - System is ran via a Raspberry Pi and Coral Tensor Processing Unit.<br><br>
+        - The system's MQTT Mosquitto Broker enables low bandwith/latency bidirectional communication.<br><br>
+        - Applications employs AI/ML integration with a fault tolerant design.<br><br>
+        - Exhibits a quantized multi-object machine learning classifier for realtime video object-detection.<br><br>
+        - Follows a multi-threaded design to reduce process-blocking bottlenecks.<br><br> 
+        - Includes reminder system with recurrence optioning.<br><br>
+        - Sensors asyncronously push updates only when needed to conserve bandwidth and/or battery.<br><br>
+        - Bespoke job engine asynchronously schedules tasks and services as background processes for reminders, scenes, etc.<br><br>
+        - Personal data is secured by an AES algorithm in CBC (Cipher Block Chaining) mode with a 128-bit key for encryption which uses PKCS7 padding.
+        </div>
+
+        <br>
+        <br>
+        <br>
+        <br>
+
+        <h2 style="text-align: center;">Hardware Specifications</h2>
+
+        <br>
+
+        <div style="margin-left: 12%;">
+        <h4>Host Server: Raspberry PI 4</h4>
+        - Model: B089ZZ8DTV<br>
+        - Processor: Broadcom BCM2711, quad-core Cortex-A72 (ARM v8) 64-bit SoC @ 1.5GHz<br>
+        - Operating System: 32-bit Raspbian GNU/Linux 11 (bullseye)<br>
+        - Linux Kernel: Linux raspberrypi 6.1.21-v8+<br>
+        - Memory: 8GB LPDDR4<br>
+        - Connectivity: 2.4 GHz and wireless LAN, Bluetooth, Gigabit Ethernet<br>
+        - Multimedia: H.265 H.264 OpenGL ES, 3.0 graphics<br>
+        - Flash Memory: SanDisk 64GB Extreme microSDXC UHS-I Micro SD Card<br>
+        - Input power: 3A 5V DC (USB-C or GPIO header) or PoE (requires PoE HAT)<br><br>
+
+        <h4>Google Edge Tensor Processing Unit: Used for high-speed ML inferencing.</h4>
+        - Supported OS: Debian based Linux<br>
+        - Model: G950-06809-01<br>
+        - IO: up to 4 tera-ops per second (tops)<br>
+        - Connector: USB 3.0 Type-C<br>
+        </div>
+        </div>
+        </div>
+        </div>
+    </div>
+
+    <br>
+    <br>
+    <br>
+    <br>
+
+    {% include 'includes/footer.html' %}
+
+  </body>
+</html>
